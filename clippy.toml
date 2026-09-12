@@ -1,0 +1,4 @@
+# RustMail Suite Clippy configuration.
+# Keep the minimum-supported-rust-version aligned with workspace.package.rust-version
+# so clippy does not suggest lints newer than our MSRV.
+msrv = "1.98"

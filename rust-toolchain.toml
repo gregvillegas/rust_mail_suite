@@ -1,0 +1,7 @@
+[toolchain]
+# Pin to the stable channel. On machines using rustup this auto-installs the
+# matching toolchain and components. On a Homebrew-managed Rust (no rustup)
+# this file is informational only.
+channel = "stable"
+components = ["rustfmt", "clippy"]
+profile = "default"

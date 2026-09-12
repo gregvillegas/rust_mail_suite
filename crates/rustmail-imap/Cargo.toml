@@ -1,0 +1,14 @@
+[package]
+name = "rustmail-imap"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Async IMAP client wrapper used to read messages server-side from Dovecot."
+
+[dependencies]
+rustmail-core.workspace = true
+thiserror.workspace = true
+tracing.workspace = true

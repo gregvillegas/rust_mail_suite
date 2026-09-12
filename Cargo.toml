@@ -1,0 +1,38 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/rustmail-core",
+    "crates/rustmail-web",
+    "crates/rustmail-admin",
+    "crates/rustmail-imap",
+    "crates/rustmail-cli",
+]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.98"
+license = "MIT OR Apache-2.0"
+authors = ["RustMail Suite Contributors"]
+repository = "https://github.com/rustmail-suite/rustmail-suite"
+
+# Shared dependency versions. Individual crates opt in via `workspace = true`.
+# Only Phase 0 essentials are declared here; heavier crates (axum, sqlx,
+# argon2, jsonwebtoken, askama, async-imap, ...) are added in their own phases.
+[workspace.dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+anyhow = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+serde = { version = "1", features = ["derive"] }
+
+# Internal crates
+rustmail-core = { path = "crates/rustmail-core" }
+rustmail-imap = { path = "crates/rustmail-imap" }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true

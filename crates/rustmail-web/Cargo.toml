@@ -1,0 +1,21 @@
+[package]
+name = "rustmail-web"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+description = "Webmail and public web UI for RustMail Suite (axum + askama, Bootstrap 5 + HTMX + Alpine.js)."
+
+[[bin]]
+name = "rustmail-web"
+path = "src/main.rs"
+
+[dependencies]
+rustmail-core.workspace = true
+rustmail-imap.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
