@@ -15,7 +15,7 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 ## Phase 0 — Project Kickoff & Environment Audit ☐
 **Deliverables**
 - Cargo workspace with `rustmail-core`, `rustmail-web`, `rustmail-admin`, `rustmail-imap`, `rustmail-cli`
-- `docker-compose.dev.yml` (Postgres 16, Redis 7, MailHog)
+- `docker-compose.dev.yml` (Postgres 16, Redis 7, Mailpit)
 - `Makefile` targets: `dev`, `migrate`, `test`, `lint`
 - `rust-toolchain.toml`, `rustfmt.toml`, `clippy.toml`
 - `README.md` with architecture diagram

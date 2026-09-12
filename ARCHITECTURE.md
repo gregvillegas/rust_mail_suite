@@ -172,7 +172,7 @@ depends only on `rustmail-core`. This keeps the core reusable and testable.
 ## 8. Environments
 
 - **Dev:** `docker-compose.dev.yml` brings up Postgres 16, Redis 7, and a dev
-  SMTP sink (MailHog). Rust binaries run on the host via `cargo run`.
+  SMTP sink (Mailpit). Rust binaries run on the host via `cargo run`.
 - **Prod:** Ansible playbook provisions Postfix/Dovecot/Amavis/ClamAV +
   PostgreSQL + Redis, deploys Rust binaries as systemd units. (Phase 11)
 

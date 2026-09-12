@@ -16,7 +16,7 @@ rust_mail_suite/
 ├── rustfmt.toml                 # Formatting rules               (Phase 0)
 ├── clippy.toml                  # Lint config                    (Phase 0)
 ├── Makefile                     # dev / migrate / test / lint    (Phase 0)
-├── docker-compose.dev.yml       # Postgres 16, Redis 7, MailHog  (Phase 0)
+├── docker-compose.dev.yml       # Postgres 16, Redis 7, Mailpit  (Phase 0)
 ├── .env.example                 # Required env vars              (Phase 0)
 ├── .gitignore                                                     # (Phase 0)
 │
