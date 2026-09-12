@@ -1,12 +1,12 @@
 [package]
 name = "rustmail-cli"
+description = "Operator tooling for RustMail Suite (seed, migrate, provision, maintenance)."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Operator tooling for RustMail Suite (seed, migrate, provision, maintenance)."
 
 [[bin]]
 name = "rustmail-cli"
@@ -14,6 +14,7 @@ path = "src/main.rs"
 
 [dependencies]
 rustmail-core.workspace = true
+tokio.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true

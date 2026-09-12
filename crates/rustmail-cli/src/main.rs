@@ -1,23 +1,23 @@
-//! `rustmail-cli` — operator tooling for RustMail Suite.
+//! RustMail Suite operator CLI binary.
 //!
-//! Phase 0 provides only a buildable entrypoint that initializes structured
-//! logging and reports the version. Subcommands (seed admin, run migrations,
-//! provisioning, maintenance) are introduced starting in Phase 1.
+//! Phase 0 scaffolding: initializes tracing and logs a startup line, then
+//! exits. Subcommands (seed, migrate, provision) are added in later phases.
 
 use anyhow::Result;
 
-fn main() -> Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
-        )
-        .init();
-
+#[tokio::main]
+async fn main() -> Result<()> {
+    init_tracing();
     tracing::info!(
-        tool = "rustmail-cli",
-        version = rustmail_core::version(),
-        "ready (Phase 0 skeleton — no subcommands yet)"
+        crate_version = rustmail_core::version(),
+        "rustmail-cli starting (Phase 0 scaffold — no subcommands yet)"
     );
-
     Ok(())
+}
+
+/// Initializes the global tracing subscriber, honoring `RUST_LOG`.
+fn init_tracing() {
+    use tracing_subscriber::{fmt, EnvFilter};
+    let filter = EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info"));
+    fmt().with_env_filter(filter).init();
 }

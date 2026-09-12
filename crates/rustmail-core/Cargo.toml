@@ -1,12 +1,12 @@
 [package]
 name = "rustmail-core"
+description = "Core domain models, repositories, auth, config, and errors for RustMail Suite."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Shared domain models, repositories, auth, config, and error types for RustMail Suite."
 
 [dependencies]
 thiserror.workspace = true

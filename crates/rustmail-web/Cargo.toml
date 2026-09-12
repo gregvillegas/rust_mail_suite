@@ -1,12 +1,12 @@
 [package]
 name = "rustmail-web"
+description = "Webmail + public UI + WebSocket server for RustMail Suite (axum + askama)."
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true
-description = "Webmail and public web UI for RustMail Suite (axum + askama, Bootstrap 5 + HTMX + Alpine.js)."
 
 [[bin]]
 name = "rustmail-web"

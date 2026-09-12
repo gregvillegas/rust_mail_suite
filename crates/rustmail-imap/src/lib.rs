@@ -1,22 +1,17 @@
 //! # rustmail-imap
 //!
-//! Async IMAP client wrapper for RustMail Suite. Used by `rustmail-web` and
-//! `rustmail-admin` to read message bodies server-side from Dovecot, since
-//! Postgres stores only message metadata (`messages_meta`) and bodies live in
-//! Maildir.
+//! Async IMAP client wrapper for RustMail Suite. Used by the web and admin
+//! crates to fetch message bodies server-side from Dovecot.
 //!
-//! Phase 0 provides only a buildable skeleton; the `async-imap` client is
-//! introduced in Phase 6.
+//! This is Phase 0 scaffolding: the crate compiles as an empty library. The
+//! IMAP client is implemented in Phase 6.
 #![deny(warnings)]
 #![forbid(unsafe_code)]
 
-/// The crate version, sourced from Cargo at compile time.
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-/// Returns the crate version string.
+/// Returns the crate version string (from `CARGO_PKG_VERSION`).
 #[must_use]
 pub fn version() -> &'static str {
-    VERSION
+    env!("CARGO_PKG_VERSION")
 }
 
 #[cfg(test)]
@@ -25,6 +20,6 @@ mod tests {
 
     #[test]
     fn version_is_reported() {
-        assert_eq!(version(), env!("CARGO_PKG_VERSION"));
+        assert!(!version().is_empty());
     }
 }

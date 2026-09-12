@@ -1,4 +1,10 @@
-# RustMail Suite Clippy configuration.
-# Keep the minimum-supported-rust-version aligned with workspace.package.rust-version
-# so clippy does not suggest lints newer than our MSRV.
-msrv = "1.98"
+# Clippy configuration for RustMail Suite.
+# Lint *levels* (deny/warn) are enforced via CI (`cargo clippy -- -D warnings`)
+# and crate-level attributes; this file holds tunable thresholds.
+
+# Fail on functions that are too long / too complex early, to keep handlers small.
+too-many-arguments-threshold = 8
+type-complexity-threshold = 250
+
+# Documentation: allow common proper nouns to avoid false positives in `doc_markdown`.
+doc-valid-idents = ["RustMail", "PostgreSQL", "Dovecot", "Postfix", "ClamAV", "SpamAssassin", "IMAP", "SMTP", "LMTP", "WebSocket", "HTMX", "CalDAV", "CardDAV", "..-default"]

@@ -1,18 +1,21 @@
 # RustMail Suite — development infrastructure.
 #
-# Brings up the backing services the Rust binaries talk to during local
-# development. The Rust services themselves run on the host via `cargo run`.
+# Brings up the backing services needed to run the Rust binaries locally:
+#   - PostgreSQL 16  (metadata / message index)
+#   - Redis 7        (cache / rate-limit buckets)
+#   - Mailpit        (dev SMTP sink + web UI to inspect outbound mail)
 #
-#   make dev   # start this stack (detached)
-#   make down  # stop it
+# The Rust binaries run on the host via `cargo run`, not in these containers.
 #
-# Values are sourced from the .env file (copy .env.example -> .env).
-
-name: rustmail-dev
+# Usage:
+#   cp .env.example .env      # then edit as needed
+#   make dev                  # docker compose -f docker-compose.dev.yml up -d
+#
+# Values are sourced from the .env file in this directory.
 
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:16
     container_name: rustmail-postgres
     restart: unless-stopped
     environment:
@@ -22,7 +25,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-rustmail} -d ${POSTGRES_DB:-rustmail}"]
       interval: 5s
@@ -30,32 +33,32 @@ services:
       retries: 10
 
   redis:
-    image: redis:7-alpine
+    image: redis:7
     container_name: rustmail-redis
     restart: unless-stopped
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - redisdata:/data
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
 
-  # Mailpit — maintained successor to MailHog. Dev SMTP sink + web UI.
   mailpit:
     image: axllent/mailpit:latest
     container_name: rustmail-mailpit
     restart: unless-stopped
     ports:
-      - "${MAILPIT_SMTP_PORT:-1025}:1025"   # SMTP submission (dev)
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"   # SMTP sink
       - "${MAILPIT_UI_PORT:-8025}:8025"     # Web UI
     environment:
       MP_MAX_MESSAGES: 5000
-      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
 volumes:
-  pgdata:
-  redisdata:
+  postgres_data:
+  redis_data:

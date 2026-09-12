@@ -8,17 +8,14 @@
 .env.*
 !.env.example
 
-# sqlx offline query cache is committed intentionally; keep it out of ignore.
+# sqlx offline query cache is committed intentionally (added in Phase 1):
+# do NOT ignore .sqlx/
 
 # Editor / OS
 .DS_Store
-*.swp
 .idea/
-.vscode/*
-!.vscode/extensions.json
+.vscode/
+*.swp
 
-# Logs
-*.log
-
-# mdBook build output
-/docs/book
+# Docker volumes / local data
+/data

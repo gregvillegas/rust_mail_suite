@@ -1,29 +1,21 @@
 //! # rustmail-core
 //!
-//! Shared library for RustMail Suite. Houses the domain model, repository
-//! traits and their PostgreSQL implementations, the authentication service,
-//! configuration loading, and the crate-wide error type.
+//! Shared library for RustMail Suite. Houses domain models, repository traits
+//! and their Postgres implementations, the authentication service, config
+//! loading, and error types.
 //!
-//! This is the single source of truth for business logic; the binary crates
-//! (`rustmail-web`, `rustmail-admin`, `rustmail-cli`) and the `rustmail-imap`
-//! library all depend on it, and nothing depends on the binaries.
-//!
-//! Phase 0 provides only a buildable skeleton. Modules are filled in during
-//! their respective phases:
-//! - `domain`, `repository` — Phase 1
-//! - `auth` — Phase 2
+//! This is Phase 0 scaffolding: the crate compiles as an empty library. Modules
+//! (`domain`, `repository`, `auth`) are populated in later phases.
 #![deny(warnings)]
 #![forbid(unsafe_code)]
 
-/// The crate version, sourced from Cargo at compile time.
-pub const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-/// Returns the crate version string.
+/// Returns the crate version string (from `CARGO_PKG_VERSION`).
 ///
-/// Placeholder used by Phase 0 to prove the workspace builds and links.
+/// Used as a trivial smoke-test target during Phase 0 and as a build sanity
+/// check for downstream crates.
 #[must_use]
 pub fn version() -> &'static str {
-    VERSION
+    env!("CARGO_PKG_VERSION")
 }
 
 #[cfg(test)]
@@ -32,6 +24,6 @@ mod tests {
 
     #[test]
     fn version_is_reported() {
-        assert_eq!(version(), env!("CARGO_PKG_VERSION"));
+        assert!(!version().is_empty());
     }
 }

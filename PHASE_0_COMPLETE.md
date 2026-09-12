@@ -2,8 +2,9 @@
 
 ## Summary
 
-The RustMail Suite repository skeleton is in place and the Cargo workspace
-builds, lints, formats, and tests cleanly. No future-phase code was scaffolded.
+The RustMail Suite repository skeleton is in place. The Cargo workspace builds,
+formats, lints (warnings denied), and tests cleanly, and the dev infrastructure
+stack starts and reports healthy. No future-phase code was scaffolded.
 
 ### Environment audit (host)
 | Tool           | Version / status                     |
@@ -13,59 +14,66 @@ builds, lints, formats, and tests cleanly. No future-phase code was scaffolded.
 | Make           | GNU Make 3.81                        |
 | Git            | 2.50.1                               |
 
-> Note: Rust is Homebrew-managed (no `rustup`), so `rust-toolchain.toml` is
+> Rust is Homebrew-managed (no `rustup`), so `rust-toolchain.toml` is
 > informational locally — it does not auto-install a toolchain. CI uses the
-> `dtolnay/rust-toolchain@stable` action, which honors it.
+> `dtolnay/rust-toolchain@stable` action, which honors the channel.
 
 ## Deliverables
 
-- **Cargo workspace** (`Cargo.toml`) with 5 members and shared `[workspace.dependencies]`:
-  - `crates/rustmail-core` (lib) — `#![deny(warnings)]`, `version()` + unit test
-  - `crates/rustmail-imap` (lib) — depends on core; `version()` + unit test
-  - `crates/rustmail-web` (bin) — tokio + tracing entrypoint
-  - `crates/rustmail-admin` (bin) — tokio + tracing entrypoint
-  - `crates/rustmail-cli` (bin) — sync tracing entrypoint
-- **`docker-compose.dev.yml`** — Postgres 16, Redis 7, **Mailpit** (chosen over
-  MailHog as the maintained successor), all with healthchecks.
-- **`Makefile`** — `dev`, `down`, `logs`, `migrate`, `build`, `test`, `lint`,
-  `fmt`, `fmt-check`, `clippy`, `clean`, `help`.
-- **`rust-toolchain.toml`**, **`rustfmt.toml`**, **`clippy.toml`** (MSRV 1.98).
-- **`README.md`** with architecture diagram (pre-existing blueprint docs updated
-  Mailpit ← MailHog).
-- **`.env.example`** with DB/Redis/SMTP/logging/JWT vars.
-- **`.github/workflows/ci.yml`** — fmt → clippy (`-D warnings`) → test, with
-  caching and concurrency control.
-- **`.gitignore`** and initialized git repo.
+- **Cargo workspace** (`Cargo.toml`, resolver 2) with 5 members and shared
+  `[workspace.dependencies]` (tokio, anyhow, thiserror 2, tracing,
+  tracing-subscriber, serde):
+  - `crates/rustmail-core` (lib) — `#![deny(warnings)]` + `#![forbid(unsafe_code)]`;
+    exposes a documented `version()` fn; 1 unit test.
+  - `crates/rustmail-imap` (lib) — depends on core; documented `version()` fn; 1 unit test.
+  - `crates/rustmail-web` (bin) — async `#[tokio::main]` + tracing init (placeholder).
+  - `crates/rustmail-admin` (bin) — async `#[tokio::main]` + tracing init (placeholder).
+  - `crates/rustmail-cli` (bin) — async `#[tokio::main]` + tracing init (placeholder).
+- **`docker-compose.dev.yml`** — Postgres 16 (`postgres:16`), Redis 7 (`redis:7`),
+  **Mailpit** (`axllent/mailpit:latest`, chosen over MailHog per request), all with
+  healthchecks and env-driven ports.
+- **`Makefile`** — `help`, `dev`, `dev-down`, `dev-logs`, `migrate`, `build`,
+  `check`, `test`, `lint`, `fmt`, `clean`.
+- **`rust-toolchain.toml`** (channel `stable`, rustfmt + clippy),
+  **`rustfmt.toml`** (max_width 100, edition 2021),
+  **`clippy.toml`** (thresholds + `doc-valid-idents` only).
+- **`README.md`** with architecture diagram (plus `ARCHITECTURE.md`,
+  `ROADMAP.md`, `PROJECT_STRUCTURE.md` blueprint docs).
+- **`.env.example`** with DB / Redis / Mailpit-SMTP / web+admin bind / JWT / logging vars.
+- **`.github/workflows/ci.yml`** — fmt → clippy (`-D warnings`) → test, with cargo caching.
+- **`.gitignore`** (ignores `.env`, keeps `.env.example`).
 
 ## Verification — results
 
-| Check                              | Command                                          | Result |
-|------------------------------------|--------------------------------------------------|--------|
-| Workspace builds                   | `cargo build --workspace`                        | ✅ pass |
-| Formatting                         | `cargo fmt --all -- --check`                     | ✅ pass |
-| Lint (warnings denied)             | `cargo clippy --workspace --all-targets -- -D warnings` | ✅ pass |
-| Tests                              | `cargo test --workspace`                         | ✅ 2 passed |
-| Compose file valid                 | `docker compose -f docker-compose.dev.yml config -q` | ✅ valid |
-| `make dev` starts Postgres + Redis | `make dev`                                       | ⚠️ not run — Docker daemon (Rancher Desktop) was not running on the host |
+| Check                        | Command                                                 | Result |
+|------------------------------|---------------------------------------------------------|--------|
+| Workspace builds (clean)     | `cargo build --workspace`                               | ✅ pass (exit 0) |
+| Formatting                   | `cargo fmt --all -- --check`                            | ✅ pass |
+| Lint (warnings denied)       | `cargo clippy --workspace --all-targets -- -D warnings` | ✅ pass (no warnings) |
+| Tests                        | `cargo test --workspace --all-targets`                  | ✅ 2 passed, 0 failed |
+| `make dev` starts services   | `make dev` → `docker compose ps`                        | ✅ postgres **(healthy)**, redis **(healthy)**, mailpit **(healthy)** |
+| Postgres reachable           | `pg_isready -U rustmail -d rustmail`                    | ✅ accepting connections |
+| Redis reachable              | `redis-cli ping`                                        | ✅ PONG |
+| `make dev-down` tears down   | `make dev-down`                                         | ✅ containers + network removed |
 
 ### Reproduce
 ```bash
 cargo build --workspace
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace
+cargo test --workspace --all-targets
 
 # Dev infra (requires the Docker daemon running):
-make dev      # start Postgres 16, Redis 7, Mailpit
-make down     # stop
+cp .env.example .env
+make dev        # start Postgres 16, Redis 7, Mailpit
+make dev-down   # stop and remove
 # Mailpit UI: http://localhost:8025
 ```
 
-## Known caveat / action for you
-- **`make dev` was not executed** because the Docker daemon (Rancher Desktop)
-  is installed but was not running during verification. The compose file itself
-  is validated. To confirm the second verification criterion, start Rancher
-  Desktop, then run `make dev` and check `docker compose -f docker-compose.dev.yml ps`.
+## Known caveat
+- **`rust-toolchain.toml` is informational locally** because the host uses
+  Homebrew-managed Rust (no `rustup`). It is honored in CI via
+  `dtolnay/rust-toolchain@stable`. No action required.
 
 ## Not done (by design)
 - No DB schema/migrations, domain models, auth, HTTP servers, templates, or
@@ -74,4 +82,3 @@ make down     # stop
 ---
 
 **Phase 0 complete. Say "Start Phase 1" to proceed.**
-(Optional: start Rancher Desktop and run `make dev` first to tick the last box.)
