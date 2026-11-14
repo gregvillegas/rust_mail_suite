@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO quota_usage (mailbox_id, bytes_used, messages_count)\n             VALUES ($1, GREATEST($2::bigint, 0), GREATEST($3::bigint, 0))\n             ON CONFLICT (mailbox_id) DO UPDATE\n                SET bytes_used = GREATEST(quota_usage.bytes_used + $2::bigint, 0),\n                    messages_count = GREATEST(quota_usage.messages_count + $3::bigint, 0),\n                    updated_at = now()\n             RETURNING mailbox_id, bytes_used, messages_count, updated_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "mailbox_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "bytes_used",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "messages_count",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1f250cee83c8f4baa42ef18dfbcbaabaca9a509173ef974cde81ad8fadc8cde4"
+}

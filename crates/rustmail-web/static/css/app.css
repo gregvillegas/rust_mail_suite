@@ -1,0 +1,70 @@
+/* RustMail UI: small additions on top of Bootstrap 5.3.
+   Colours come from Bootstrap's CSS variables so light and dark themes both work. */
+
+/* Alpine hides x-cloak elements until it has initialised, avoiding a flash. */
+[x-cloak] { display: none !important; }
+
+/* htmx: its built-in indicator styles are disabled (they are inline, which the
+   CSP forbids), so the two states we use are defined here. */
+.rm-busy { display: none; }
+.htmx-request .rm-busy,
+.htmx-request.rm-busy { display: inline-block; }
+.htmx-request .rm-idle { display: none; }
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+
+.rm-brand { font-weight: 600; letter-spacing: 0.01em; }
+.rm-brand svg { width: 1.4rem; height: 1.4rem; vertical-align: -0.3rem; margin-right: 0.4rem; }
+
+/* Keep menus above page content and inside the viewport on small screens. */
+.dropdown-menu.show { display: block; }
+.navbar .dropdown-menu { z-index: 1050; }
+
+.rm-footer { font-size: 0.875rem; }
+
+main:focus { outline: none; }
+
+/* ── Sign in ────────────────────────────────────────────────────────────── */
+
+.rm-auth { max-width: 26rem; }
+.rm-auth .card { border-radius: 0.75rem; }
+
+/* ── Admin ──────────────────────────────────────────────────────────────── */
+
+.rm-sidebar { min-height: calc(100vh - 3.5rem - 3rem); border-right: var(--bs-border-width) solid var(--bs-border-color); }
+@media (max-width: 767.98px) {
+  .rm-sidebar { min-height: 0; border-right: 0; border-bottom: var(--bs-border-width) solid var(--bs-border-color); }
+}
+.rm-stat { font-size: 1.75rem; font-weight: 600; line-height: 1.2; }
+
+/* ── Dialog ─────────────────────────────────────────────────────────────── */
+
+.rm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 0.5);
+}
+.rm-modal-panel { width: 100%; max-width: 28rem; }
+
+/* ── Toasts ─────────────────────────────────────────────────────────────── */
+
+#rm-toasts { z-index: 1090; max-width: 100vw; }
+/* Bootstrap's .toast-container ignores the mouse and expects .toast children to
+   opt back in; ours are .alert elements, so do it here or the close button is dead. */
+#rm-toasts .alert { min-width: 16rem; max-width: 24rem; pointer-events: auto; }
+
+/* ── Tables ─────────────────────────────────────────────────────────────── */
+
+.rm-activity td, .rm-activity th { white-space: nowrap; }
+.rm-activity .rm-device { max-width: 14rem; overflow: hidden; text-overflow: ellipsis; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
+/* Quarantine message excerpt: keep line breaks, wrap long lines, bound the height. */
+.rm-excerpt { white-space: pre-wrap; max-height: 24rem; overflow: auto; font-size: 0.875rem; }

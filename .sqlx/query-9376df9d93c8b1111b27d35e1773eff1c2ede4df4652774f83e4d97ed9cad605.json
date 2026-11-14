@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT inode, byte_offset FROM pipeline_log_state WHERE path = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "inode",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "byte_offset",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "9376df9d93c8b1111b27d35e1773eff1c2ede4df4652774f83e4d97ed9cad605"
+}

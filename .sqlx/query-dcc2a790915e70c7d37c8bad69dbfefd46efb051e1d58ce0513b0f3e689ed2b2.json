@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, name, status AS \"status: AccountStatus\",\n                      default_quota_bytes, max_mailboxes, created_at, updated_at\n               FROM domains WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "status: AccountStatus",
+        "type_info": {
+          "Custom": {
+            "name": "account_status",
+            "kind": {
+              "Enum": [
+                "active",
+                "suspended",
+                "disabled"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "default_quota_bytes",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "max_mailboxes",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "dcc2a790915e70c7d37c8bad69dbfefd46efb051e1d58ce0513b0f3e689ed2b2"
+}

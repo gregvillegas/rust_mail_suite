@@ -1,0 +1,38 @@
+# Managed by RustMail Suite (rendered from deploy/dovecot/dovecot-sql.conf.ext.j2).
+# Local edits are overwritten the next time scripts/setup-mta.sh runs.
+#
+# Authentication and per-user settings, read from the RustMail database.
+
+driver = pgsql
+connect = host={{ db_host }} port={{ db_port }} dbname={{ db_name }} user={{ dovecot_db_user }} password={{ dovecot_db_password }}
+
+# RustMail stores standard Argon2id PHC strings ($argon2id$v=19$...), which Dovecot
+# verifies with libsodium. The scheme prefix tells Dovecot how to read them.
+default_pass_scheme = ARGON2ID
+
+# Only active users in active domains with an active mailbox may log in.
+password_query = \
+  SELECT u.email AS user, '{ARGON2ID}' || u.password_hash AS password \
+  FROM users u \
+  JOIN domains d ON d.id = u.domain_id \
+  JOIN mailboxes m ON m.user_id = u.id \
+  WHERE u.email = lower('%u') AND u.status = 'active' AND d.status = 'active' AND m.status = 'active'
+
+# home:       <base>/<mailbox.maildir_path>, e.g. /var/mail/vhosts/example.com/alice/
+# quota_rule: the mailbox override, else the domain default, else 0 (unlimited).
+user_query = \
+  SELECT '{{ vmail_base }}/' || m.maildir_path AS home, \
+         {{ vmail_uid }} AS uid, {{ vmail_gid }} AS gid, \
+         '*:bytes=' || COALESCE(m.quota_bytes, d.default_quota_bytes, 0) AS quota_rule \
+  FROM users u \
+  JOIN domains d ON d.id = u.domain_id \
+  JOIN mailboxes m ON m.user_id = u.id \
+  WHERE u.email = lower('%u') AND u.status = 'active' AND d.status = 'active' AND m.status = 'active'
+
+# `doveadm user '*'` and quota recalculation iterate over this.
+iterate_query = \
+  SELECT u.email AS username \
+  FROM users u \
+  JOIN domains d ON d.id = u.domain_id \
+  JOIN mailboxes m ON m.user_id = u.id \
+  WHERE u.status = 'active' AND d.status = 'active' AND m.status = 'active'

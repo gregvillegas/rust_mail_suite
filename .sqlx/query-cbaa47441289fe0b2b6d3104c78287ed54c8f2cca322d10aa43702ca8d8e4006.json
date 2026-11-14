@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE quarantine_items\n               SET status = 'deleted', resolved_at = now()\n               WHERE status = 'held' AND received_at < now() - make_interval(days => $1)\n               RETURNING file_name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "file_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "cbaa47441289fe0b2b6d3104c78287ed54c8f2cca322d10aa43702ca8d8e4006"
+}

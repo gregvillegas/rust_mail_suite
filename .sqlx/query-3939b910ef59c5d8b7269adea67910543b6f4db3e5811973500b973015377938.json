@@ -1,0 +1,71 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO filter_policies\n                   (scope, spam_tag_level, spam_tag2_level, spam_kill_level,\n                    bypass_spam_checks, bypass_virus_checks, spam_lover, virus_lover)\n               VALUES ($1, $2::float8::numeric, $3::float8::numeric, $4::float8::numeric, $5, $6, $7, $8)\n               ON CONFLICT (scope) DO UPDATE SET\n                   spam_tag_level = COALESCE(EXCLUDED.spam_tag_level, filter_policies.spam_tag_level),\n                   spam_tag2_level = COALESCE(EXCLUDED.spam_tag2_level, filter_policies.spam_tag2_level),\n                   spam_kill_level = COALESCE(EXCLUDED.spam_kill_level, filter_policies.spam_kill_level),\n                   bypass_spam_checks = COALESCE(EXCLUDED.bypass_spam_checks, filter_policies.bypass_spam_checks),\n                   bypass_virus_checks = COALESCE(EXCLUDED.bypass_virus_checks, filter_policies.bypass_virus_checks),\n                   spam_lover = COALESCE(EXCLUDED.spam_lover, filter_policies.spam_lover),\n                   virus_lover = COALESCE(EXCLUDED.virus_lover, filter_policies.virus_lover)\n               RETURNING scope, spam_tag_level::float8 AS \"spam_tag_level?\",\n                         spam_tag2_level::float8 AS \"spam_tag2_level?\",\n                         spam_kill_level::float8 AS \"spam_kill_level?\",\n                         bypass_spam_checks, bypass_virus_checks, spam_lover, virus_lover",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "scope",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "spam_tag_level?",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 2,
+        "name": "spam_tag2_level?",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 3,
+        "name": "spam_kill_level?",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 4,
+        "name": "bypass_spam_checks",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "bypass_virus_checks",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "spam_lover",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "virus_lover",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Float8",
+        "Float8",
+        "Float8",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Bool"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      null,
+      null,
+      true,
+      true,
+      true,
+      true
+    ]
+  },
+  "hash": "3939b910ef59c5d8b7269adea67910543b6f4db3e5811973500b973015377938"
+}

@@ -1,0 +1,11 @@
+{% extends "admin/layout.html" %}
+
+{% block title %}{{ ctx.t("admin-title") }}{% endblock %}
+
+{% block admin_content %}
+<h1 class="h3 mb-4">{{ ctx.t("admin-title") }}</h1>
+{#- Refreshes itself every 30 s; the first load happens immediately. #}
+<div id="admin-overview" hx-get="/admin/partials/overview" hx-trigger="load, every 30s" hx-swap="innerHTML">
+  <p class="text-body-secondary">{{ ctx.t("loading") }}</p>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT count(*) AS \"n!\" FROM quarantine_items\n               WHERE ($1::text IS NULL OR status = $1)\n                 AND ($2::text IS NULL OR kind = $2)\n                 AND ($3::text IS NULL OR recipient ILIKE $3 OR sender ILIKE $3)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "78e733886df8878f5f84e1df3aaf34e37e03fc35d6c2a81e47eb80fc8b37575b"
+}

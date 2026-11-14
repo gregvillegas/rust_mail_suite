@@ -1,0 +1,25 @@
+<div class="row g-3">
+  {% if show_domains -%}
+  <div class="col-sm-6 col-xl-4">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">{{ ctx.t("admin-stat-domains") }}</div>
+      <div class="rm-stat">{{ domains }}</div>
+    </div></div>
+  </div>
+  {%- endif %}
+  <div class="col-sm-6 col-xl-4">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">{{ ctx.t("admin-stat-database") }}</div>
+      <div class="rm-stat">
+        {% if db_ok %}<span class="text-success">{{ ctx.t_num("admin-db-ok", "ms", db_ms) }}</span>{% else %}<span class="text-danger">{{ ctx.t("admin-db-error") }}</span>{% endif %}
+      </div>
+    </div></div>
+  </div>
+  <div class="col-sm-6 col-xl-4">
+    <div class="card h-100"><div class="card-body">
+      <div class="text-body-secondary small">{{ ctx.t("admin-stat-version") }}</div>
+      <div class="rm-stat">{{ ctx.version() }}</div>
+    </div></div>
+  </div>
+</div>
+<p class="small text-body-secondary mt-3 mb-0">{{ ctx.t_str("admin-refreshed", "time", refreshed) }}</p>

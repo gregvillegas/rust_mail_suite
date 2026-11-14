@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <p class="display-1 fw-bold text-body-secondary mb-0">{{ status }}</p>
+  <h1 class="h3">{{ title }}</h1>
+  <p class="text-body-secondary">{{ message }}</p>
+  <a class="btn btn-primary" href="/">{{ ctx.t("error-back-home") }}</a>
+</div>
+{% endblock %}

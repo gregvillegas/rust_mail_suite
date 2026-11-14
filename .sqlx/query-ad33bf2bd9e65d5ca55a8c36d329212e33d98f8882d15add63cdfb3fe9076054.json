@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT destination FROM aliases WHERE address = $1 AND enabled ORDER BY destination",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "destination",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "ad33bf2bd9e65d5ca55a8c36d329212e33d98f8882d15add63cdfb3fe9076054"
+}

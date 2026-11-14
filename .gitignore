@@ -19,3 +19,6 @@
 
 # Docker volumes / local data
 /data
+
+# Local dev runtime data (Maildirs, probes)
+/var/

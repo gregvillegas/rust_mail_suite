@@ -71,6 +71,10 @@ make dev-down   # stop and remove
 ```
 
 ## Known caveat
+- **Correction (found in Phase 1):** the Postgres checks above ran `pg_isready`
+  inside the container. A Postgres already installed on the dev Mac was bound to
+  `127.0.0.1:5432` and shadowed the container for host clients. The dev container now
+  publishes on host port **5433** (see `.env.example`).
 - **`rust-toolchain.toml` is informational locally** because the host uses
   Homebrew-managed Rust (no `rustup`). It is honored in CI via
   `dtolnay/rust-toolchain@stable`. No action required.

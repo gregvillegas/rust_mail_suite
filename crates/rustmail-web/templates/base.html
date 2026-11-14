@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="{{ ctx.lang() }}" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="same-origin">
+  {#- htmx hardening: no eval, no script tags in responses, no inline indicator
+      styles (CSP), and no history snapshots in localStorage (they would outlive
+      logout). Every response except 204 is swapped so server-rendered form
+      errors (4xx) and toasts show up. -#}
+  <meta name="htmx-config" content='{"allowEval":false,"allowScriptTags":false,"includeIndicatorStyles":false,"attributesToSettle":["class","width","height"],"historyCacheSize":0,"responseHandling":[{"code":"204","swap":false},{"code":".*","swap":true}]}'>
+  <title>{% block title %}{% endblock %} · {{ ctx.t("app-name") }}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ ctx.assets.url("favicon.svg") }}">
+  <script src="{{ ctx.assets.url("js/theme-init.js") }}"></script>
+  {% let css = ctx.assets.bootstrap_css() -%}
+  <link rel="stylesheet" href="{{ css.href }}" data-lib="bootstrap"{% if let Some(hash) = css.integrity %} integrity="{{ hash }}" crossorigin="anonymous"{% endif %}{% if let Some(local) = css.fallback %} data-fallback="{{ local }}"{% endif %}>
+  <link rel="stylesheet" href="{{ ctx.assets.url("css/app.css") }}">
+  <script defer src="{{ ctx.assets.url("js/app.js") }}"></script>
+  {% let htmx = ctx.assets.htmx() -%}
+  <script defer src="{{ htmx.href }}" data-lib="htmx"{% if let Some(hash) = htmx.integrity %} integrity="{{ hash }}" crossorigin="anonymous"{% endif %}{% if let Some(local) = htmx.fallback %} data-fallback="{{ local }}"{% endif %}></script>
+  {% let alpine = ctx.assets.alpine() -%}
+  <script defer src="{{ alpine.href }}" data-lib="alpine"{% if let Some(hash) = alpine.integrity %} integrity="{{ hash }}" crossorigin="anonymous"{% endif %}{% if let Some(local) = alpine.fallback %} data-fallback="{{ local }}"{% endif %}></script>
+  {% if ctx.assets.uses_cdn() -%}
+  <script defer src="{{ ctx.assets.url("js/asset-fallback.js") }}"></script>
+  {%- endif %}
+</head>
+<body hx-boost="true" class="d-flex flex-column min-vh-100"
+      data-msg-network="{{ ctx.t("toast-network") }}" data-msg-close="{{ ctx.t("close") }}">
+  <a class="visually-hidden-focusable position-absolute p-2" href="#main">{{ ctx.t("skip-to-content") }}</a>
+  {% block nav %}{% include "partials/navbar.html" %}{% endblock %}
+  <main id="main" class="flex-grow-1" tabindex="-1">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="rm-footer border-top py-3 text-body-secondary">
+    <div class="container d-flex flex-wrap justify-content-between gap-2">
+      <span>{{ ctx.t_str("footer-version", "version", ctx.version()) }}</span>
+    </div>
+  </footer>
+  <div id="rm-toasts" class="toast-container position-fixed bottom-0 end-0 p-3" role="status" aria-live="polite"></div>
+</body>
+</html>

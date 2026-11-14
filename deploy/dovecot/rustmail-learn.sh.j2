@@ -1,0 +1,16 @@
+#!/bin/sh
+# Managed by RustMail Suite. Called by Dovecot's Sieve (pipe) with "spam" or "ham"
+# and the message on standard input. Trains SpamAssassin's Bayesian database.
+set -eu
+# Dovecot starts this with an empty environment.
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+case "${1:-}" in
+  spam) mode=--spam ;;
+  ham) mode=--ham ;;
+  *) echo "usage: rustmail-learn spam|ham" >&2; exit 64 ;;
+esac
+# sa-learn insists on a home directory; give it a harmless one.
+HOME="$(mktemp -d)"; export HOME
+trap 'rm -rf "$HOME"' EXIT
+exec /usr/bin/sa-learn "$mode" --no-sync --single --dbpath "{{ bayes_dir }}" >/dev/null

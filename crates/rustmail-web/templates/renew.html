@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ctx.t("renew-title") }}{% endblock %}
+
+{% block nav %}{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+  <div id="renew-working">
+    <div class="spinner-border text-secondary mb-3" aria-hidden="true"></div>
+    <h1 class="h4">{{ ctx.t("renew-title") }}</h1>
+    <p class="text-body-secondary">{{ ctx.t("renew-body") }}</p>
+  </div>
+  <div id="renew-failed" hidden role="alert">
+    <p class="text-body-secondary">{{ ctx.t("renew-failed") }}</p>
+  </div>
+  <noscript><a class="btn btn-primary" href="/login">{{ ctx.t("login-title") }}</a></noscript>
+</div>
+<script src="{{ ctx.assets.url("js/session.js") }}" defer></script>
+{% endblock %}

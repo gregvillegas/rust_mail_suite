@@ -1,0 +1,5 @@
+target
+.git
+var
+node_modules
+.env

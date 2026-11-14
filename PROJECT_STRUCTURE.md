@@ -25,16 +25,30 @@ rust_mail_suite/
 │   │   ├── Cargo.toml
 │   │   ├── src/
 │   │   │   ├── lib.rs
-│   │   │   ├── domain/          # Entities + FromRow models       (Phase 1)
-│   │   │   ├── repository/      # Repo traits + Postgres impls     (Phase 1)
-│   │   │   └── auth/            # AuthService, tokens, hashing      (Phase 2)
-│   │   └── tests/               # Integration tests
+│   │   │   ├── error.rs         # Error / Result                   (Phase 1)
+│   │   │   ├── db.rs            # connect() + embedded migrator    (Phase 1)
+│   │   │   ├── password.rs      # Argon2id hash/verify             (Phase 1)
+│   │   │   ├── seed.rs          # idempotent first-run bootstrap   (Phase 1)
+│   │   │   ├── domain/          # Entities + FromRow models        (Phase 1)
+│   │   │   ├── repository/      # Repo traits + Postgres impls    (Phase 1)
+│   │   │   └── auth/            # AuthService, JWT, CSRF tokens    (Phase 2)
+│   │   └── tests/               # Integration tests (need Postgres)
 │   │
-│   ├── rustmail-web/            # (bin) webmail + public UI + WebSocket
+│   ├── rustmail-web/            # (lib + bin) HTTP layer; webmail UI from Phase 3
 │   │   ├── Cargo.toml
 │   │   ├── src/
-│   │   ├── templates/          # askama templates (Bootstrap/HTMX) (Phase 3)
-│   │   ├── static/             # CSS/JS/assets served by tower-http (Phase 3)
+│   │   │   ├── lib.rs           # build_app()                       (Phase 2)
+│   │   │   ├── main.rs          # server bootstrap                  (Phase 2)
+│   │   │   ├── config.rs        # WebConfig from env                (Phase 2)
+│   │   │   ├── auth/            # cookies, CSRF, rate limit, /auth  (Phase 2)
+│   │   │   ├── app.rs           # AppState, routing, middleware     (Phase 3)
+│   │   │   ├── pages.rs         # HTML routes + WebUser extractor   (Phase 3)
+│   │   │   ├── ui.rs            # PageCtx, template structs, errors (Phase 3)
+│   │   │   ├── i18n.rs          # Fluent localisation               (Phase 3)
+│   │   │   └── assets.rs        # content-hashed URLs, CDN/local    (Phase 3)
+│   │   ├── templates/          # askama: base, login, dashboard, admin/, partials/
+│   │   ├── locales/            # Fluent messages: en/main.ftl, de/main.ftl
+│   │   ├── static/             # css/, js/, vendor/ (Bootstrap, htmx, Alpine)
 │   │   └── tests/
 │   │
 │   ├── rustmail-admin/          # (bin) admin console
@@ -57,7 +71,9 @@ rust_mail_suite/
 ├── deploy/                      # Deployment artifacts / daemon configs
 │   ├── postfix/                 # Postfix templated configs      (Phase 4/5)
 │   ├── dovecot/                 # Dovecot configs (SQL auth, LMTP, Sieve, quota) (Phase 4)
-│   ├── amavis/                  # Amavis config                   (Phase 5)
+│   ├── amavis/                  # Amavis config + Postgres policy lookup (.j2) (Phase 5)
+│   ├── spamassassin/            # local.cf (Bayes, shared dir)               (Phase 5)
+│   ├── clamav/                  # built-in EICAR test signature              (Phase 5)
 │   ├── grafana/                 # Grafana dashboards JSON          (Phase 10)
 │   └── ansible/                 # Ansible playbook (Ubuntu/Debian) (Phase 11)
 │

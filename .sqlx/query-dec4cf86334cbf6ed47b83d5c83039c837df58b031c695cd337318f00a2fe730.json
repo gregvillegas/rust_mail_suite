@@ -1,0 +1,122 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, domain_id, local_part, email, password_hash, display_name,\n                      role AS \"role: UserRole\", status AS \"status: AccountStatus\",\n                      locale, last_login_at, failed_login_count, locked_until,\n                      created_at, updated_at\n               FROM users WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "domain_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "local_part",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "password_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "role: UserRole",
+        "type_info": {
+          "Custom": {
+            "name": "user_role",
+            "kind": {
+              "Enum": [
+                "super_admin",
+                "domain_admin",
+                "user"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 7,
+        "name": "status: AccountStatus",
+        "type_info": {
+          "Custom": {
+            "name": "account_status",
+            "kind": {
+              "Enum": [
+                "active",
+                "suspended",
+                "disabled"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 8,
+        "name": "locale",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "last_login_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "failed_login_count",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "locked_until",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 12,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 13,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "dec4cf86334cbf6ed47b83d5c83039c837df58b031c695cd337318f00a2fe730"
+}

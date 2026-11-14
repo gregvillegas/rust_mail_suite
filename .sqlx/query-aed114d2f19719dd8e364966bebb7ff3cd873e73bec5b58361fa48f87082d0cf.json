@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE quarantine_items SET status = 'deleted', resolved_by = $2, resolved_at = now()\n             WHERE id = $1 AND status = 'held'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aed114d2f19719dd8e364966bebb7ff3cd873e73bec5b58361fa48f87082d0cf"
+}

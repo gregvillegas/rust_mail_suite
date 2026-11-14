@@ -17,19 +17,83 @@ authors = ["RustMail Suite Contributors"]
 repository = "https://github.com/rustmail-suite/rustmail-suite"
 
 # Shared dependency versions. Individual crates opt in via `workspace = true`.
-# Only Phase 0 essentials are declared here; heavier crates (axum, sqlx,
-# argon2, jsonwebtoken, askama, async-imap, ...) are added in their own phases.
+# Heavier crates (axum, jsonwebtoken, askama, async-imap, ...) are added in
+# their own phases.
 [workspace.dependencies]
-tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "signal", "time"] }
 anyhow = "1"
 thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde = { version = "1", features = ["derive"] }
 
+# Phase 1: database and domain model
+sqlx = { version = "0.8", default-features = false, features = [
+    "runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json", "macros", "migrate",
+] }
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock", "serde"] }
+async-trait = "0.1"
+serde_json = "1"
+# Password hashing (the full auth layer arrives in Phase 2; Phase 1 only needs
+# it so the seed command never stores a plaintext password).
+argon2 = { version = "0.5", features = ["std"] }
+# CLI parsing and .env loading for rustmail-cli.
+clap = { version = "4", features = ["derive", "env"] }
+dotenvy = "0.15"
+
+# Phase 2: authentication, sessions and the HTTP auth layer
+# JWT access tokens (HS256 only). `rust_crypto` is the pure-Rust backend.
+jsonwebtoken = { version = "11", default-features = false, features = ["rust_crypto"] }
+# Refresh-token hashing and CSRF token signing.
+sha2 = "0.10"
+hmac = "0.12"
+base64 = "0.22"
+# `multipart` for attachments in the compose form, `ws` for new-mail push (Phase 6).
+axum = { version = "0.8", features = ["multipart", "ws"] }
+axum-extra = { version = "0.12", features = ["cookie"] }
+tower_governor = { version = "0.8", default-features = false, features = ["axum", "tracing"] }
+time = "0.3"
+# Dev only: in-process HTTP testing.
+axum-test = "21"
+
+# Phase 3: server-rendered UI
+# Compile-time checked HTML templates.
+askama = "0.16"
+# Fluent localisation (plural rules, fallbacks) with a compile-time embedded loader.
+fluent-templates = { version = "0.15", default-features = false, features = ["macros", "walkdir"] }
+# Static file serving (ServeDir) and response-header layers.
+tower-http = { version = "0.7", default-features = false, features = ["fs", "set-header"] }
+tower = "0.5"
+
+# Phase 5: mail pipeline
+# Log-line recognition. Already in the dependency tree via other crates.
+regex = "1"
+
+# Phase 6: webmail
+# IMAP client (reads mail server-side). The tokio runtime feature, not async-std.
+async-imap = { version = "0.12", default-features = false, features = ["runtime-tokio"] }
+# Message parsing (MIME, headers, attachments) and building (outgoing mail).
+mail-parser = "1"
+mail-builder = "2"
+# Sanitises HTML mail before it is shown.
+ammonia = "4"
+# TLS to Dovecot and Postfix. `ring` is the provider already in the dependency tree.
+tokio-rustls = { version = "0.26", default-features = false, features = ["ring", "tls12"] }
+webpki-roots = "1"
+futures-util = "0.3"
+
 # Internal crates
 rustmail-core = { path = "crates/rustmail-core" }
 rustmail-imap = { path = "crates/rustmail-imap" }
+
+# Argon2 with its default memory cost is very slow unoptimised; keep dev builds
+# and tests responsive by optimising just the hashing crates.
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
 
 [profile.release]
 opt-level = 3

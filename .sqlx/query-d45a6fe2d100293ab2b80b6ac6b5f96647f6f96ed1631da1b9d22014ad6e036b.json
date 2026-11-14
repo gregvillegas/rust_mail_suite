@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, user_id, maildir_path, quota_bytes,\n                      status AS \"status: AccountStatus\", created_at, updated_at\n               FROM mailboxes WHERE user_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "maildir_path",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "quota_bytes",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "status: AccountStatus",
+        "type_info": {
+          "Custom": {
+            "name": "account_status",
+            "kind": {
+              "Enum": [
+                "active",
+                "suspended",
+                "disabled"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d45a6fe2d100293ab2b80b6ac6b5f96647f6f96ed1631da1b9d22014ad6e036b"
+}

@@ -1,0 +1,22 @@
+# Managed by RustMail Suite (rendered from deploy/dovecot/dovecot-dict-sql.conf.ext.j2).
+# Local edits are overwritten the next time scripts/setup-mta.sh runs.
+#
+# Dovecot's SQL dictionary: where the quota counters are kept. Both counters
+# live in one row per user in quota_usage (migration 0009 lets Dovecot address a
+# row by user name and clamps decrements at zero).
+
+connect = host={{ db_host }} port={{ db_port }} dbname={{ db_name }} user={{ dovecot_db_user }} password={{ dovecot_db_password }}
+
+map {
+  pattern = priv/quota/storage
+  table = quota_usage
+  username_field = username
+  value_field = bytes_used
+}
+
+map {
+  pattern = priv/quota/messages
+  table = quota_usage
+  username_field = username
+  value_field = messages_count
+}

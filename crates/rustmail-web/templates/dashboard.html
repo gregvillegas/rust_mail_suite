@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ctx.t("dashboard-title") }}{% endblock %}
+
+{% block content %}
+{% if let Some(user) = ctx.user %}
+<div class="container py-4">
+  <h1 class="h3 mb-4">{{ ctx.t_str("dashboard-welcome", "name", user.name) }}</h1>
+
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header">{{ ctx.t("dashboard-account") }}</div>
+        <div class="card-body">
+          <dl class="mb-0">
+            <dt class="text-body-secondary fw-normal small">{{ ctx.t("dashboard-email") }}</dt>
+            <dd>{{ user.email }}</dd>
+            <dt class="text-body-secondary fw-normal small">{{ ctx.t("dashboard-role") }}</dt>
+            <dd class="mb-0"><span class="badge text-bg-secondary">{{ ctx.role_label() }}</span></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-8">
+      <div class="card h-100">
+        <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <span>{{ ctx.t("dashboard-activity-title") }}</span>
+          <div x-data="confirmModal" @keydown.escape.window="hide">
+            <button type="button" class="btn btn-outline-danger btn-sm" @click="show">{{ ctx.t("sign-out-everywhere") }}</button>
+            <div class="rm-modal" x-show="open" x-cloak role="dialog" aria-modal="true" aria-labelledby="logout-all-title" @click.self="hide">
+              <div class="card rm-modal-panel shadow">
+                <div class="card-body">
+                  <h2 class="h5" id="logout-all-title">{{ ctx.t("logout-all-title") }}</h2>
+                  <p>{{ ctx.t("logout-all-body") }}</p>
+                  <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-secondary" x-ref="cancel" @click="hide">{{ ctx.t("cancel") }}</button>
+                    <button type="button" class="btn btn-danger" hx-post="/logout-all" hx-swap="none" hx-boost="false">{{ ctx.t("logout-all-confirm") }}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <p class="text-body-secondary small">{{ ctx.t("dashboard-activity-intro") }}</p>
+          <div id="activity" hx-get="/partials/activity" hx-trigger="load" hx-swap="innerHTML">
+            <p class="text-body-secondary mb-0">{{ ctx.t("loading") }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

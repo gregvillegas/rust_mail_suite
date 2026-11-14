@@ -61,31 +61,82 @@ Full details in [`ARCHITECTURE.md`](./ARCHITECTURE.md). Directory layout in
 
 ---
 
-## Quick Start (dev) — available after Phase 0
+## Quick Start (dev)
 
 ```bash
+# 0. Configure (the dev Postgres listens on host port 5433, not 5432)
+cp .env.example .env
+
 # 1. Bring up dev infrastructure (Postgres 16, Redis 7, Mailpit)
 make dev
 
-# 2. Run database migrations
+# 2. Apply database migrations (needs sqlx-cli 0.8.6, see `make migrate`),
+#    or without sqlx-cli:  cargo run -p rustmail-cli -- migrate
 make migrate
 
-# 3. Build the workspace
-cargo build --workspace
+# 3. Create the first domain + super admin (prints a generated password once)
+make seed SEED_DOMAIN=example.com
 
-# 4. Lint & test
+# 4. Run the web server. It refuses to start with the placeholder JWT_SECRET:
+#    run `make secret` and paste the value into .env as JWT_SECRET=...
+make run-web          # http://127.0.0.1:8080  ->  /healthz and /auth/*
+
+# 5. Build, lint, test (tests create their own throwaway databases)
+cargo build --workspace
 make lint
 make test
+
+# 6. Optional: drive a real browser through the UI (needs Chrome and internet)
+make browser-test
 ```
 
-Copy `.env.example` to `.env` and adjust before running.
+Then open http://127.0.0.1:8080 and sign in with the admin created by `make seed`.
+
+### Mail server (Phase 4, optional)
+
+A Debian 12 container runs Postfix and Dovecot against your dev database:
+
+```bash
+make mta-up        # builds the image; renders config from deploy/ and starts both daemons
+rustmail-cli domain create example.test
+rustmail-cli user create alice@example.test      # prints a generated password once
+make mta-smoke     # create users, deliver with swaks, read via IMAP, check quota (about 2 minutes)
+```
+
+Mail relayed outwards lands in Mailpit. Supported targets: Debian 12 (Postfix 3.7, Dovecot 2.3). Dovecot 2.4 is not supported.
+Incoming mail is also scanned (ClamAV, SpamAssassin). Viruses and very high spam scores are held in quarantine; run
+`rustmail-cli pipeline follow` (or `make pipeline-follow`) to index the logs, then open **Administration → Quarantine** as a super admin.
+Thresholds are set with `rustmail-cli policy set @example.com --quarantine-level 15`. Without a download, ClamAV only knows a built-in
+EICAR test signature; set `CLAMAV_UPDATE=1` in `deploy/dev/mta.env` to fetch the real signature database (needs the internet, ~300 MB).
+
+For a real host, copy `deploy/mta.env.example` to `/etc/rustmail/mta.env` and run `sudo scripts/setup-mta.sh`.
+With `COOKIE_SECURE=false` in `.env` (the example default) cookies work over plain
+HTTP on localhost; leave it `true` anywhere else.
+
+### Auth API (Phase 2)
+
+| Route | Method | Notes |
+|-------|--------|-------|
+| `/auth/csrf` | GET | Issues a CSRF token (cookie `rm_csrf` + JSON). |
+| `/auth/login` | POST | JSON `{email, password}`; needs `X-CSRF-Token`; rate limited. |
+| `/auth/refresh` | POST | Rotates the session from the `rm_refresh` cookie; needs `X-CSRF-Token`; rate limited. |
+| `/auth/logout` | POST | Ends the session and clears cookies; needs `X-CSRF-Token`. |
+| `/auth/me` | GET | The signed-in user (needs the `rm_access` cookie). |
+
+Tokens only ever travel in `HttpOnly` cookies. See `PHASE_2_COMPLETE.md` for the
+security model.
+
+`SQLX_OFFLINE=true` (the default in `.env.example`) compiles queries from the
+committed `.sqlx/` cache, so builds work without a running database. After
+changing a query or migration, run `make migrate` then `make prepare` and
+commit the updated `.sqlx/`.
 
 ---
 
 ## Development Rules
 
 - Work strictly **one phase at a time**; do not scaffold future phases.
-- Production-grade code: `thiserror`/`anyhow`, `tracing`, config via `config`/`figment`.
+- Production-grade code: `thiserror`/`anyhow`, `tracing`, config via environment/`.env` (a config crate may be added when settings grow).
 - No `unwrap()`/`expect()` in production paths.
 - `#![deny(warnings)]` on library crates; document all public items.
 - Conventional Commits.

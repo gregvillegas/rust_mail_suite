@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM pipeline_events WHERE occurred_at < now() - make_interval(days => $1)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c3725f3e536a20e6ccd7d669c146daa98839b506aebbcb84b819c60b9b247a3f"
+}

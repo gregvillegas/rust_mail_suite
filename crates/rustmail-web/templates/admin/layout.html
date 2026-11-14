@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <nav class="col-md-3 col-lg-2 py-3 rm-sidebar" aria-label="{{ ctx.t("nav-admin") }}">
+      <ul class="nav nav-pills flex-column">
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_exact("/admin") %} active{% endif %}" href="/admin"{% if ctx.nav_exact("/admin") %} aria-current="page"{% endif %}>{{ ctx.t("admin-overview") }}</a>
+        </li>
+        {% if ctx.is_super_admin() %}
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/admin/quarantine") %} active{% endif %}" href="/admin/quarantine"{% if ctx.nav_active("/admin/quarantine") %} aria-current="page"{% endif %}>{{ ctx.t("admin-quarantine") }}</a>
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    <div class="col-md-9 col-lg-10 py-4 px-md-4">
+      {% block admin_content %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}

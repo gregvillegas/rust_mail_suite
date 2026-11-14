@@ -1,0 +1,27 @@
+{% if rows.is_empty() %}
+<p class="text-body-secondary mb-0">{{ ctx.t("dashboard-activity-empty") }}</p>
+{% else %}
+<p class="small text-body-secondary mb-2">{{ ctx.t_num("dashboard-activity-count", "count", rows.len() as i64) }}</p>
+<div class="table-responsive">
+  <table class="table table-sm align-middle mb-0 rm-activity">
+    <thead>
+      <tr>
+        <th scope="col">{{ ctx.t("activity-when") }}</th>
+        <th scope="col">{{ ctx.t("activity-result") }}</th>
+        <th scope="col">{{ ctx.t("activity-address") }}</th>
+        <th scope="col">{{ ctx.t("activity-device") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td><time datetime="{{ row.iso }}">{{ row.when }}</time></td>
+        <td>{% if row.success %}<span class="badge text-bg-success">{{ ctx.t("activity-success") }}</span>{% else %}<span class="badge text-bg-danger">{{ ctx.t("activity-failure") }}</span>{% endif %}</td>
+        <td>{{ row.address }}</td>
+        <td class="rm-device" title="{{ row.device }}">{{ row.device }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}

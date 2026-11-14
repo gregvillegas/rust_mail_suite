@@ -140,6 +140,8 @@ depends only on `rustmail-core`. This keeps the core reusable and testable.
 
 - Passwords: **Argon2id** hashing.
 - Sessions: **JWT access + refresh tokens** in `httpOnly`, `Secure`, `SameSite` cookies.
+  Refresh tokens rotate on every use with theft detection (implemented in Phase 2;
+  see `PHASE_2_COMPLETE.md` for the full model).
 - Roles: `SuperAdmin`, `DomainAdmin`, `User` (enforced per-route).
 - Rate limiting via `tower-governor`; CSRF protection on state-changing routes.
 - Audit log on auth events and admin mutations.
@@ -182,3 +184,29 @@ depends only on `rustmail-core`. This keeps the core reusable and testable.
 
 See [`PROJECT_STRUCTURE.md`](./PROJECT_STRUCTURE.md) for the annotated directory
 tree, and [`ROADMAP.md`](./ROADMAP.md) for the phase-by-phase execution plan.
+
+## 10. Mail server wiring (Phase 4)
+
+- Postfix reads routing from PostgreSQL through the `postfix` role, which has column-level SELECT and cannot read password hashes. Recipients that do not exist are refused during the SMTP conversation.
+- Dovecot authenticates against `users.password_hash` (Argon2id, same hash RustMail verifies) through the `dovecot` role. Postfix delegates SASL to Dovecot over a unix socket.
+- Delivery: Postfix → LMTP unix socket → Dovecot → `<VMAIL_BASE>/<domain>/<user>/Maildir`.
+- Quota: Dovecot's SQL dictionary writes `quota_usage` directly (migration 0009 lets it address rows by user name), so RustMail reads live figures.
+- `AccountService` creates the database rows first and the Maildir second, and removes the rows again if the disk step fails. `MailboxProvisioner` never changes ownership and refuses paths that escape `VMAIL_BASE`.
+- Config files are `.j2` templates with plain `{{ var }}` substitution only, rendered by `scripts/setup-mta.sh` (and later by Ansible).
+
+## 11. Filtering pipeline (Phase 5)
+
+```
+Postfix smtpd ──► content_filter ──► Amavis :10024 ──► ClamAV (clamd socket)
+                                         │         └─► SpamAssassin (library, Bayes)
+                                         │ policy: SELECT … FROM filter_policies (role `amavis`)
+                                         ▼
+Postfix :10025 (re-entry, no filter) ──► Dovecot LMTP ──► Sieve (X-Spam-Flag → Junk) ──► Maildir
+```
+
+- Amavis decides per recipient. Thresholds come from `filter_policies` (server `@.`, domain `@example.com`, recipient `a@example.com`; most specific wins, NULL inherits).
+- Infected, banned or very spammy mail is discarded silently (no backscatter) and written to the quarantine directory by Amavis. Mail between the "spam" and "quarantine" scores is delivered tagged and filed in Junk by Sieve.
+- `rustmail-cli pipeline follow` reads the Postfix and Amavis logs, stores parsed events in `pipeline_events` and indexes quarantined files in `quarantine_items`. Position and events are committed in one transaction.
+- The web UI (super admin only) lists, inspects, releases and deletes quarantined messages. Release hands the original back to Postfix's re-entry port, to that one recipient, without rescanning.
+- Training: moving a message into Junk (or out of it, except to Trash) runs `sa-learn` through Dovecot's imapsieve.
+- ClamAV runs in the same container/host as Amavis because Amavis passes clamd a file path.

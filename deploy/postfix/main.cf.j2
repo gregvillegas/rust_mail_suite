@@ -1,0 +1,78 @@
+# Managed by RustMail Suite (rendered from deploy/postfix/main.cf.j2).
+# Local edits are overwritten the next time scripts/setup-mta.sh runs; change the
+# variables in the env file (see deploy/mta.env.example) instead.
+#
+# Target: Postfix 3.6 (Ubuntu 22.04) and 3.7 (Debian 12).
+
+compatibility_level = 3.6
+
+# ─── Identity ────────────────────────────────────────────────────────────────
+myhostname = {{ mta_hostname }}
+myorigin = $myhostname
+# Only the machine itself is "local". Every hosted domain is virtual, so none of
+# them may appear here as well (Postfix warns about that).
+mydestination = localhost
+mynetworks = {{ mta_mynetworks }}
+inet_interfaces = all
+inet_protocols = {{ mta_inet_protocols }}
+smtpd_banner = $myhostname ESMTP
+biff = no
+append_dot_mydomain = no
+readme_directory = no
+# Sub-addressing (user+tag@) is not supported yet, and '+' is a legal character
+# in local parts, so no delimiter is configured.
+recipient_delimiter =
+
+# Empty = log to syslog. Containers set this to /dev/stdout.
+maillog_file = {{ postfix_maillog_file }}
+
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+relayhost = {{ mta_relayhost }}
+message_size_limit = {{ mta_message_size_limit }}
+mailbox_size_limit = 0
+
+# ─── Virtual hosting (from PostgreSQL) ───────────────────────────────────────
+virtual_mailbox_domains = pgsql:/etc/postfix/pgsql/virtual-domains.cf
+virtual_mailbox_maps = pgsql:/etc/postfix/pgsql/virtual-mailboxes.cf
+virtual_alias_maps = pgsql:/etc/postfix/pgsql/virtual-aliases.cf, pgsql:/etc/postfix/pgsql/virtual-groups.cf
+# Mail for virtual mailboxes is handed to Dovecot over LMTP, which applies Sieve
+# and quota and writes the Maildir.
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+smtpd_sender_login_maps = pgsql:/etc/postfix/pgsql/sender-login.cf
+
+# ─── Virus and spam filtering ────────────────────────────────────────────────
+# Every message passes through Amavis (ClamAV + SpamAssassin) before delivery.
+# Empty disables the loop.
+content_filter = {{ mta_content_filter }}
+# ─── Authentication (SASL via Dovecot) ───────────────────────────────────────
+# Enabled per service in master.cf: only the submission port accepts logins.
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = no
+smtpd_sasl_security_options = noanonymous
+smtpd_sasl_tls_security_options = $smtpd_sasl_security_options
+
+# ─── TLS ─────────────────────────────────────────────────────────────────────
+smtpd_tls_cert_file = {{ tls_cert }}
+smtpd_tls_key_file = {{ tls_key }}
+smtpd_tls_security_level = may
+smtpd_tls_protocols = >=TLSv1.2
+smtpd_tls_mandatory_protocols = >=TLSv1.2
+smtpd_tls_loglevel = 1
+smtpd_tls_received_header = yes
+smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+smtp_tls_security_level = may
+smtp_tls_protocols = >=TLSv1.2
+smtp_tls_loglevel = 1
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+tls_ssl_options = NO_COMPRESSION
+
+# ─── Abuse controls ──────────────────────────────────────────────────────────
+smtpd_helo_required = yes
+disable_vrfy_command = yes
+smtpd_delay_reject = yes
+# Relaying: only our own networks and authenticated users. Everything else may
+# only send to domains we host.
+smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
+smtpd_recipient_restrictions = reject_non_fqdn_recipient, permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination

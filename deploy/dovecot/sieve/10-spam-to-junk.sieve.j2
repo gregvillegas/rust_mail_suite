@@ -1,0 +1,8 @@
+# Managed by RustMail Suite. Runs for every delivery, before the user's own script.
+# Amavis adds X-Spam-Flag: YES to mail scoring above the "spam" level that was not
+# held back in quarantine.
+require ["fileinto"];
+if header :contains "X-Spam-Flag" "YES" {
+  fileinto "Junk";
+  stop;
+}

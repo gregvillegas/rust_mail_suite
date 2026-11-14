@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ctx.t("login-title") }}{% endblock %}
+
+{% block content %}
+<div class="rm-auth container py-5">
+  <div class="card shadow-sm">
+    <div class="card-body p-4">
+      <h1 class="h3 mb-1">{{ ctx.t("login-title") }}</h1>
+      <p class="text-body-secondary mb-4">{{ ctx.t("login-subtitle") }}</p>
+      {% include "partials/login_form.html" %}
+      <noscript><div class="alert alert-warning mt-3 mb-0" role="alert">{{ ctx.t("login-noscript") }}</div></noscript>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,10 @@
+# Managed by RustMail Suite (rendered from deploy/postfix/pgsql/virtual-groups.cf.j2).
+# Local edits are overwritten the next time scripts/setup-mta.sh runs.
+#
+# virtual_alias_maps (2 of 2): a group's distribution-list address expands to the
+# addresses of its active members.
+hosts = {{ db_host }}:{{ db_port }}
+dbname = {{ db_name }}
+user = {{ postfix_db_user }}
+password = {{ postfix_db_password }}
+query = SELECT u.email FROM groups g JOIN group_members gm ON gm.group_id = g.id JOIN users u ON u.id = gm.user_id JOIN domains d ON d.id = g.domain_id WHERE g.address = lower('%s') AND u.status = 'active' AND d.status = 'active'

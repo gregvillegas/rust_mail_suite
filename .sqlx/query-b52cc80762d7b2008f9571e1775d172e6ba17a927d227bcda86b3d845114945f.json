@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT id, mail_id, recipient, sender, kind, reason,\n                      spam_score::float8 AS \"spam_score?\", size_bytes, file_name, received_at,\n                      status, resolved_at\n               FROM quarantine_items WHERE id = $1 FOR UPDATE",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "mail_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "recipient",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "sender",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "kind",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "reason",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "spam_score?",
+        "type_info": "Float8"
+      },
+      {
+        "ordinal": 7,
+        "name": "size_bytes",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "file_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "received_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "resolved_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      true,
+      false,
+      false,
+      false,
+      true
+    ]
+  },
+  "hash": "b52cc80762d7b2008f9571e1775d172e6ba17a927d227bcda86b3d845114945f"
+}

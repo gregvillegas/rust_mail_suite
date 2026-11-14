@@ -1,0 +1,96 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("quarantine-title") }}{% endblock %}
+{% block admin_content %}
+<h1 class="h3 mb-2">{{ ctx.t("quarantine-title") }}</h1>
+<p class="text-body-secondary">{{ ctx.t("quarantine-intro") }}</p>
+{% if !configured %}
+<div class="alert alert-warning" role="alert">{{ ctx.t("quarantine-not-configured") }}</div>
+{% else %}
+{% if let Some(notice) = notice %}
+<div class="alert alert-{{ notice.class }}" role="status">{{ ctx.t(notice.key) }}</div>
+{% endif %}
+<div class="row g-3 mb-4">
+  <div class="col-sm-4"><div class="card h-100"><div class="card-body">
+    <div class="text-body-secondary small">{{ ctx.t("quarantine-count-virus") }}</div>
+    <div class="rm-stat">{{ counts.virus }}</div>
+  </div></div></div>
+  <div class="col-sm-4"><div class="card h-100"><div class="card-body">
+    <div class="text-body-secondary small">{{ ctx.t("quarantine-count-spam") }}</div>
+    <div class="rm-stat">{{ counts.spam }}</div>
+  </div></div></div>
+  <div class="col-sm-4"><div class="card h-100"><div class="card-body">
+    <div class="text-body-secondary small">{{ ctx.t("quarantine-count-other") }}</div>
+    <div class="rm-stat">{{ counts.other }}</div>
+  </div></div></div>
+</div>
+<form method="get" action="/admin/quarantine" class="row g-2 align-items-end mb-3">
+  <div class="col-sm-3 col-md-2">
+    <label for="q-status" class="form-label">{{ ctx.t("quarantine-filter-status") }}</label>
+    <select id="q-status" name="status" class="form-select">
+      {% for option in status_options %}<option value="{{ option.value }}"{% if option.selected %} selected{% endif %}>{{ ctx.t(option.label) }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-3 col-md-2">
+    <label for="q-kind" class="form-label">{{ ctx.t("quarantine-filter-kind") }}</label>
+    <select id="q-kind" name="kind" class="form-select">
+      {% for option in kind_options %}<option value="{{ option.value }}"{% if option.selected %} selected{% endif %}>{{ ctx.t(option.label) }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-6 col-md-5">
+    <label for="q-search" class="form-label">{{ ctx.t("quarantine-filter-search") }}</label>
+    <input id="q-search" name="q" type="search" class="form-control" value="{{ search }}" maxlength="200" autocomplete="off">
+  </div>
+  <div class="col-auto">
+    <button type="submit" class="btn btn-primary">{{ ctx.t("quarantine-filter-apply") }}</button>
+  </div>
+</form>
+<p class="small text-body-secondary mb-2">{{ ctx.t_num("quarantine-total", "count", total) }}</p>
+{% if rows.is_empty() %}
+<p>{{ ctx.t("quarantine-empty") }}</p>
+{% else %}
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th scope="col">{{ ctx.t("quarantine-col-received") }}</th>
+        <th scope="col">{{ ctx.t("quarantine-col-kind") }}</th>
+        <th scope="col">{{ ctx.t("quarantine-col-reason") }}</th>
+        <th scope="col">{{ ctx.t("quarantine-col-sender") }}</th>
+        <th scope="col">{{ ctx.t("quarantine-col-recipient") }}</th>
+        <th scope="col" class="text-end">{{ ctx.t("quarantine-col-size") }}</th>
+        <th scope="col">{{ ctx.t("quarantine-col-status") }}</th>
+        <th scope="col"><span class="visually-hidden">{{ ctx.t("quarantine-view") }}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td><time datetime="{{ row.iso }}">{{ row.when }}</time></td>
+        <td><span class="badge text-bg-{{ row.badge }}">{{ ctx.t(row.kind_key) }}</span></td>
+        <td class="text-break">{{ row.reason }}</td>
+        <td class="text-break">{{ row.sender }}</td>
+        <td class="text-break">{{ row.recipient }}</td>
+        <td class="text-end text-nowrap">{{ row.size }}</td>
+        <td>{{ ctx.t(row.status_key) }}</td>
+        <td><a href="/admin/quarantine/{{ row.id }}">{{ ctx.t("quarantine-view") }}<span class="visually-hidden"> ({{ row.sender }} → {{ row.recipient }})</span></a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if prev_url.is_some() || next_url.is_some() %}
+<nav aria-label="{{ ctx.t("quarantine-pagination") }}">
+  <ul class="pagination">
+    <li class="page-item{% if prev_url.is_none() %} disabled{% endif %}">
+      {% if let Some(url) = prev_url %}<a class="page-link" href="{{ url }}">{{ ctx.t("quarantine-prev") }}</a>{% else %}<span class="page-link">{{ ctx.t("quarantine-prev") }}</span>{% endif %}
+    </li>
+    <li class="page-item active" aria-current="page"><span class="page-link">{{ ctx.t_num("quarantine-page", "page", page) }}</span></li>
+    <li class="page-item{% if next_url.is_none() %} disabled{% endif %}">
+      {% if let Some(url) = next_url %}<a class="page-link" href="{{ url }}">{{ ctx.t("quarantine-next") }}</a>{% else %}<span class="page-link">{{ ctx.t("quarantine-next") }}</span>{% endif %}
+    </li>
+  </ul>
+</nav>
+{% endif %}
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO pipeline_events\n                       (occurred_at, source, kind, queue_id, mail_id, verdict, virus_name,\n                        spam_score, sender, recipient, status, detail, size_bytes, quarantine_ref)\n                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8::float8::numeric, $9, $10, $11, $12, $13, $14)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Float8",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a5087b4034f580a7617bbb6220869aca703b5d64ea9a211604bf3f2753cfc00f"
+}

@@ -1,0 +1,9 @@
+# Managed by RustMail Suite (rendered from deploy/postfix/pgsql/virtual-domains.cf.j2).
+# Local edits are overwritten the next time scripts/setup-mta.sh runs.
+#
+# virtual_mailbox_domains: which domains this server accepts mail for.
+hosts = {{ db_host }}:{{ db_port }}
+dbname = {{ db_name }}
+user = {{ postfix_db_user }}
+password = {{ postfix_db_password }}
+query = SELECT 1 FROM domains WHERE name = lower('%s') AND status = 'active'

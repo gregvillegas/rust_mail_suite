@@ -1,0 +1,17 @@
+# Managed by RustMail Suite (rendered from deploy/spamassassin/local.cf.j2).
+# Local edits are overwritten the next time scripts/setup-mta.sh runs.
+#
+# SpamAssassin runs inside Amavis (library mode, no spamd). The score thresholds
+# that decide tagging and quarantine are NOT set here but in the database table
+# filter_policies, per domain or recipient.
+report_safe 0
+# Network tests (DNS blocklists) need working DNS and add latency.
+skip_rbl_checks {{ spamassassin_skip_network }}
+# Bayesian filter. The directory is shared with the mail user so that moving a
+# message into or out of Junk in an IMAP client trains it (see the Dovecot
+# imapsieve scripts), and with Amavis so scanning uses the result.
+use_bayes 1
+bayes_auto_learn 1
+bayes_path {{ bayes_dir }}/bayes
+bayes_file_mode 0660
+lock_method flock

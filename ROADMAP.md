@@ -12,7 +12,7 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 
 ---
 
-## Phase 0 — Project Kickoff & Environment Audit ☐
+## Phase 0 — Project Kickoff & Environment Audit ☑
 **Deliverables**
 - Cargo workspace with `rustmail-core`, `rustmail-web`, `rustmail-admin`, `rustmail-imap`, `rustmail-cli`
 - `docker-compose.dev.yml` (Postgres 16, Redis 7, Mailpit)
@@ -26,20 +26,22 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 
 ---
 
-## Phase 1 — Database Schema & Domain Model ☐
+## Phase 1 — Database Schema & Domain Model ☑
 **Deliverables**
 - SQLx migrations: `users`, `domains`, `mailboxes`, `aliases`, `groups`,
   `messages_meta`, `sessions`, `audit_log`, `quota_usage`, `sieve_scripts`,
   `autoresponders`, `mail_filters`, `calendar_events` (stub), `contacts` (stub)
 - Domain models in `rustmail-core/src/domain/` (serde + `sqlx::FromRow`)
 - Repository traits + Postgres implementations
-- `seed.rs` binary to bootstrap first admin + domain
+- Seed to bootstrap first admin + domain (delivered as `rustmail-cli seed`, logic in `rustmail_core::seed`)
 
 **Verification:** `sqlx migrate run` succeeds; `cargo test -p rustmail-core` passes; seed creates admin.
 
+**Status:** complete. See `PHASE_1_COMPLETE.md`.
+
 ---
 
-## Phase 2 — Authentication & Session Layer ☐
+## Phase 2 — Authentication & Session Layer ☑
 **Deliverables**
 - Argon2id password hashing
 - JWT access + refresh tokens (httpOnly cookies)
@@ -50,9 +52,11 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 
 **Verification:** unit tests for password verify + token issue/refresh; integration test via `axum-test`.
 
+**Status:** complete. See `PHASE_2_COMPLETE.md`.
+
 ---
 
-## Phase 3 — Web UI Foundation (Bootstrap 5 + HTMX) ☐
+## Phase 3 — Web UI Foundation (Bootstrap 5 + HTMX) ☑
 **Deliverables**
 - `rustmail-web` with axum + askama templates
 - Layouts: `base.html`, `login.html`, `dashboard.html`, `admin/*`
@@ -62,6 +66,8 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 - i18n scaffolding (`fluent` or `rust-i18n`)
 
 **Verification:** `cargo run -p rustmail-web` → login page renders, login flow works E2E.
+
+**Status:** complete. See `PHASE_3_COMPLETE.md`.
 
 ---
 
@@ -78,7 +84,7 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 
 ---
 
-## Phase 5 — MTA Pipeline: Postfix + Amavis + SpamAssassin + ClamAV ☐
+## Phase 5 — MTA Pipeline: Postfix + Amavis + SpamAssassin + ClamAV ☑
 **Deliverables**
 - Postfix `master.cf` with amavis content filter chain
 - Amavis config (`deploy/amavis/`) with Postgres lookups
@@ -88,6 +94,8 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 - Quarantine table + web UI (view/release/delete)
 
 **Verification:** EICAR → quarantined; spam sample → tagged; legit → delivered.
+
+**Status:** complete. See `PHASE_5_COMPLETE.md`.
 
 ---
 

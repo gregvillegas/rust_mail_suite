@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT mailbox_id, bytes_used, messages_count, updated_at\n             FROM quota_usage WHERE mailbox_id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "mailbox_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "bytes_used",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "messages_count",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "053106995d061fe15ef4139c5ac28fb5437be8a5df77eb8ecc03b3117a151398"
+}

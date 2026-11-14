@@ -1,0 +1,8 @@
+{
+  "name": "rustmail-browser-smoke",
+  "private": true,
+  "type": "module",
+  "description": "Optional real-browser smoke test for the RustMail web UI.",
+  "scripts": { "test": "node run.mjs" },
+  "devDependencies": { "playwright-core": "1.65.0" }
+}

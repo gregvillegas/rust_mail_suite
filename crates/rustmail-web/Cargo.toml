@@ -8,6 +8,10 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 
+[lib]
+name = "rustmail_web"
+path = "src/lib.rs"
+
 [[bin]]
 name = "rustmail-web"
 path = "src/main.rs"
@@ -19,3 +23,22 @@ tokio.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+dotenvy.workspace = true
+axum.workspace = true
+axum-extra.workspace = true
+tower_governor.workspace = true
+time.workspace = true
+askama.workspace = true
+fluent-templates.workspace = true
+tower-http.workspace = true
+tower.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+base64.workspace = true
+axum-test.workspace = true
+sqlx.workspace = true

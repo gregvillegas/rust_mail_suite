@@ -1,0 +1,84 @@
+# Managed by RustMail Suite (rendered from deploy/postfix/master.cf.j2).
+# Local edits are overwritten the next time scripts/setup-mta.sh runs.
+#
+# Postfix master process configuration. Based on the Debian default, with:
+#  - every service un-chrooted (chroot = n): the pgsql lookups and the Dovecot
+#    sockets under private/ then work without copying files into the chroot;
+#  - a hardened "submission" service (port 587): TLS and authentication are
+#    mandatory, and a user may only send as their own address or aliases;
+#  - the Amavis content-filter loop (virus and spam checks): mail goes out through
+#    "smtp-amavis" to Amavis on 10024 and comes back in on 10025.
+#
+# ==========================================================================
+# service type  private unpriv  chroot  wakeup  maxproc command + args
+#               (yes)   (yes)   (no)    (never) (100)
+# ==========================================================================
+smtp      inet  n       -       n       -       -       smtpd
+
+submission inet n       -       n       -       -       smtpd
+  -o syslog_name=postfix/submission
+  -o smtpd_tls_security_level=encrypt
+  -o smtpd_tls_auth_only=yes
+  -o smtpd_sasl_auth_enable=yes
+  -o smtpd_reject_unlisted_recipient=no
+  -o smtpd_client_restrictions=permit_sasl_authenticated,reject
+  -o smtpd_relay_restrictions=permit_sasl_authenticated,reject
+  -o smtpd_sender_restrictions=reject_sender_login_mismatch
+  -o smtpd_recipient_restrictions=reject_non_fqdn_recipient,permit_sasl_authenticated,reject
+
+# Hand-off to Amavis (main.cf: content_filter).
+smtp-amavis unix -      -       n       -       2       smtp
+  -o syslog_name=postfix/amavis
+  -o smtp_data_done_timeout=1200
+  -o smtp_send_xforward_command=yes
+  -o disable_dns_lookups=yes
+  -o max_use=20
+  -o smtp_tls_security_level=none
+# Re-entry from Amavis, and from the quarantine "release" action. No content filter
+# here, so nothing is scanned twice. Only the listed clients may use it.
+{{ mta_reinject_bind }}:10025 inet n   -       n       -       -       smtpd
+  -o syslog_name=postfix/reinject
+  -o content_filter=
+  -o local_recipient_maps=
+  -o relay_recipient_maps=
+  -o smtpd_restriction_classes=
+  -o smtpd_delay_reject=no
+  -o smtpd_client_restrictions=permit_mynetworks,reject
+  -o smtpd_helo_restrictions=
+  -o smtpd_sender_restrictions=
+  -o smtpd_recipient_restrictions=permit_mynetworks,reject
+  -o smtpd_data_restrictions=reject_unauth_pipelining
+  -o smtpd_end_of_data_restrictions=
+  -o smtpd_tls_security_level=none
+  -o mynetworks={{ mta_reinject_clients }}
+  -o smtpd_error_sleep_time=0
+  -o smtpd_soft_error_limit=1001
+  -o smtpd_hard_error_limit=1000
+  -o smtpd_client_connection_count_limit=0
+  -o smtpd_client_connection_rate_limit=0
+  -o receive_override_options=no_header_body_checks,no_unknown_recipient_checks,no_milters
+pickup    unix  n       -       n       60      1       pickup
+cleanup   unix  n       -       n       -       0       cleanup
+qmgr      unix  n       -       n       300     1       qmgr
+tlsmgr    unix  -       -       n       1000?   1       tlsmgr
+rewrite   unix  -       -       n       -       -       trivial-rewrite
+bounce    unix  -       -       n       -       0       bounce
+defer     unix  -       -       n       -       0       bounce
+trace     unix  -       -       n       -       0       bounce
+verify    unix  -       -       n       -       1       verify
+flush     unix  n       -       n       1000?   0       flush
+proxymap  unix  -       -       n       -       -       proxymap
+proxywrite unix -       -       n       -       1       proxymap
+smtp      unix  -       -       n       -       -       smtp
+relay     unix  -       -       n       -       -       smtp
+        -o syslog_name=postfix/$service_name
+showq     unix  n       -       n       -       -       showq
+error     unix  -       -       n       -       -       error
+retry     unix  -       -       n       -       -       error
+discard   unix  -       -       n       -       -       discard
+local     unix  -       n       n       -       -       local
+virtual   unix  -       n       n       -       -       virtual
+lmtp      unix  -       -       n       -       -       lmtp
+anvil     unix  -       -       n       -       1       anvil
+scache    unix  -       -       n       -       1       scache
+postlog   unix-dgram n  -       n       -       1       postlogd

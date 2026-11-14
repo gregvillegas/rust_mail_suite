@@ -1,0 +1,50 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("quarantine-detail-title") }}{% endblock %}
+{% block admin_content %}
+<p><a href="/admin/quarantine">{{ ctx.t("quarantine-back") }}</a></p>
+<h1 class="h3 mb-3">{{ ctx.t("quarantine-detail-title") }}</h1>
+<dl class="row">
+  <dt class="col-sm-3">{{ ctx.t("quarantine-col-kind") }}</dt>
+  <dd class="col-sm-9"><span class="badge text-bg-{{ item.badge }}">{{ ctx.t(item.kind_key) }}</span></dd>
+  <dt class="col-sm-3">{{ ctx.t("quarantine-col-reason") }}</dt>
+  <dd class="col-sm-9 text-break">{{ item.reason }}</dd>
+  <dt class="col-sm-3">{{ ctx.t("quarantine-col-sender") }}</dt>
+  <dd class="col-sm-9 text-break">{{ item.sender }}</dd>
+  <dt class="col-sm-3">{{ ctx.t("quarantine-col-recipient") }}</dt>
+  <dd class="col-sm-9 text-break">{{ item.recipient }}</dd>
+  <dt class="col-sm-3">{{ ctx.t("quarantine-col-received") }}</dt>
+  <dd class="col-sm-9"><time datetime="{{ item.iso }}">{{ item.when }}</time></dd>
+  <dt class="col-sm-3">{{ ctx.t("quarantine-col-size") }}</dt>
+  <dd class="col-sm-9">{{ item.size }}</dd>
+  <dt class="col-sm-3">{{ ctx.t("quarantine-col-status") }}</dt>
+  <dd class="col-sm-9">{{ ctx.t(item.status_key) }}{% if let Some(when) = item.resolved %} ({{ ctx.t_str("quarantine-resolved", "when", when) }}){% endif %}</dd>
+</dl>
+{% if item.held %}
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <button type="button" class="btn btn-primary" hx-post="/admin/quarantine/{{ item.id }}/release" hx-swap="none" hx-boost="false" hx-confirm="{{ ctx.t(item.confirm_release_key) }}">{{ ctx.t("quarantine-release") }}</button>
+  <button type="button" class="btn btn-outline-danger" hx-post="/admin/quarantine/{{ item.id }}/delete" hx-swap="none" hx-boost="false" hx-confirm="{{ ctx.t("quarantine-confirm-delete") }}">{{ ctx.t("quarantine-delete") }}</button>
+</div>
+{% endif %}
+{% match preview %}
+{% when Some with (p) %}
+<h2 class="h5">{{ ctx.t("quarantine-headers") }}</h2>
+<div class="table-responsive mb-4">
+  <table class="table table-sm">
+    <tbody>
+      {% for header in p.headers %}
+      <tr><th scope="row" class="text-nowrap">{{ header.0 }}</th><td class="text-break">{{ header.1 }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<h2 class="h5">{{ ctx.t("quarantine-excerpt") }}</h2>
+{% if let Some(text) = p.excerpt %}
+<pre class="border rounded p-3 bg-body-tertiary text-break rm-excerpt">{{ text }}</pre>
+{% if p.truncated %}<p class="small text-body-secondary">{{ ctx.t("quarantine-excerpt-cut") }}</p>{% endif %}
+{% else %}
+<p class="text-body-secondary">{{ ctx.t("quarantine-no-excerpt") }}</p>
+{% endif %}
+{% when None %}
+<div class="alert alert-warning" role="alert">{{ ctx.t("quarantine-file-missing") }}</div>
+{% endmatch %}
+{% endblock %}

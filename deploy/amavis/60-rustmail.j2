@@ -1,0 +1,109 @@
+# Managed by RustMail Suite (rendered from deploy/amavis/60-rustmail.j2).
+# Local edits are overwritten the next time scripts/setup-mta.sh runs.
+#
+# Loaded after Debian's own files in /etc/amavis/conf.d, so it overrides them.
+# Per-domain and per-recipient thresholds are NOT set here: they live in the
+# database table filter_policies and are looked up for every recipient.
+use strict;
+
+$myhostname = '{{ mta_hostname }}';
+$mydomain = '{{ mta_hostname }}';
+$max_servers = {{ amavis_max_servers }};
+
+# ─── Talking to Postfix ──────────────────────────────────────────────────────
+# Postfix hands mail to us on 10024 and takes it back on 10025.
+$inet_socket_port = 10024;
+$inet_socket_bind = '127.0.0.1';
+@inet_acl = qw( 127.0.0.1 );
+$forward_method = 'smtp:[127.0.0.1]:10025';
+$notify_method = $forward_method;
+
+# ─── What to check ───────────────────────────────────────────────────────────
+@bypass_spam_checks_maps = ( 0 );
+@bypass_virus_checks_maps = ( {{ amavis_bypass_virus_checks }} );
+# Every recipient is treated as local; Postfix has already refused mail for
+# addresses and domains we do not host.
+@local_domains_maps = ( new_RE( qr/./ ) );
+
+# ─── What to do with it ──────────────────────────────────────────────────────
+# Discarding is silent: bouncing a virus or spam to its (forged) sender would only
+# spray the victim of the forgery. The message is kept in quarantine instead.
+$final_virus_destiny = D_DISCARD;
+$final_banned_destiny = D_DISCARD;
+$final_spam_destiny = D_DISCARD;
+$final_bad_header_destiny = D_PASS;
+# Below the kill level, spam is delivered with headers (X-Spam-Flag) and a Subject
+# tag; Dovecot's Sieve then files it in Junk.
+$sa_spam_subject_tag = '***SPAM*** ';
+$sa_spam_modifies_subj = 1;
+# Defaults used when the database has no value. Real values come from filter_policies.
+$sa_tag_level_deflt = 2.0;
+$sa_tag2_level_deflt = 6.2;
+$sa_kill_level_deflt = 12.0;
+$sa_dsn_cutoff_level = 100;
+
+# ─── Quarantine ──────────────────────────────────────────────────────────────
+# One file per message. The web UI lists them from the database (filled from the
+# log by `rustmail-cli pipeline`) and reads, releases and deletes the files.
+$QUARANTINEDIR = '{{ quarantine_dir }}';
+# Flat directory: a quarantine reference is then always a bare file name.
+$quarantine_subdir_levels = 0;
+$virus_quarantine_method = 'local:virus-%m';
+$spam_quarantine_method = 'local:spam-%m';
+$banned_files_quarantine_method = 'local:banned-%m';
+$bad_header_quarantine_method = 'local:badh-%m';
+$virus_quarantine_to = 'virus-quarantine';
+$spam_quarantine_to = 'spam-quarantine';
+$banned_quarantine_to = 'banned-quarantine';
+$bad_header_quarantine_to = 'bad-header-quarantine';
+# Nobody is mailed about it: the quarantine page is the notification.
+$virus_admin = undef;
+$spam_admin = undef;
+$warnvirussender = 0;
+$warnspamsender = 0;
+$warnbannedsender = 0;
+$warnbadhsender = 0;
+$warnvirusrecip = 0;
+$warnbannedrecip = 0;
+$warnbadhrecip = 0;
+
+# ─── Antivirus: clamd ────────────────────────────────────────────────────────
+# Amavis passes clamd a file name, so clamd must see the same filesystem.
+@av_scanners = (
+  ['ClamAV-clamd',
+    \&ask_daemon, ["CONTSCAN {}\n", "{{ clamd_socket }}"],
+    qr/\bOK$/m, qr/\bFOUND$/m,
+    qr/^.*?: (?!Infected Archive)(.*) FOUND$/m ],
+);
+@av_scanners_backup = ();
+
+# ─── Per-recipient policy from PostgreSQL ────────────────────────────────────
+# %k expands to the lookup keys for the recipient, e.g. for bob@example.com:
+#   bob@example.com, @example.com, @.example.com, @.com, @.
+# Rows are merged most specific first; a NULL setting inherits from the next row.
+@lookup_sql_dsn = (
+  [ 'DBI:Pg:dbname={{ db_name }};host={{ db_host }};port={{ db_port }}',
+    '{{ amavis_db_user }}', '{{ amavis_db_password }}' ],
+);
+$sql_select_policy = q{
+  SELECT p.id::text AS id,
+         p.spam_tag_level, p.spam_tag2_level, p.spam_kill_level,
+         CASE p.bypass_spam_checks  WHEN true THEN 'Y' WHEN false THEN 'N' END AS bypass_spam_checks,
+         CASE p.bypass_virus_checks WHEN true THEN 'Y' WHEN false THEN 'N' END AS bypass_virus_checks,
+         CASE p.spam_lover          WHEN true THEN 'Y' WHEN false THEN 'N' END AS spam_lover,
+         CASE p.virus_lover         WHEN true THEN 'Y' WHEN false THEN 'N' END AS virus_lover
+  FROM filter_policies p
+  WHERE p.scope IN (%k)
+  ORDER BY CASE WHEN p.scope = '@.' THEN 0 WHEN left(p.scope, 1) = '@' THEN 1 ELSE 2 END DESC
+};
+
+# Debian's default also looks up sender white/black lists in tables we do not have.
+$sql_select_white_black_list = undef;
+
+# ─── Logging ─────────────────────────────────────────────────────────────────
+# The log is what `rustmail-cli pipeline` turns into events.
+$DO_SYSLOG = {{ amavis_do_syslog }};
+$LOGFILE = '{{ amavis_log_file }}';
+$log_level = 1;
+
+1;  # ensure a defined return

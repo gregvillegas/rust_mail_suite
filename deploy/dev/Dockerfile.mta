@@ -1,0 +1,21 @@
+# Development MTA: Postfix + Dovecot on Debian 12, configured by scripts/setup-mta.sh.
+# Not for production. The image holds packages only; configuration is rendered at
+# start-up from the bind-mounted deploy/ directory.
+FROM debian:12-slim
+
+COPY scripts/setup-mta.sh /opt/rustmail/scripts/setup-mta.sh
+RUN chmod +x /opt/rustmail/scripts/setup-mta.sh \
+ && /opt/rustmail/scripts/setup-mta.sh --packages-only \
+ && apt-get install -y -qq --no-install-recommends tini swaks procps \
+ && rm -rf /var/lib/apt/lists/*
+
+# Host user ids, so files the container writes into ./var/vhosts belong to you.
+# -o: gid 20 ("dialout" in Debian, "staff" on macOS) already exists in the image.
+ARG VMAIL_UID=5000
+ARG VMAIL_GID=5000
+RUN groupadd -o -g "${VMAIL_GID}" vmail \
+ && useradd -o -u "${VMAIL_UID}" -g "${VMAIL_GID}" -M -d /var/mail/vhosts -s /usr/sbin/nologin vmail
+
+EXPOSE 25 587 143 993 4190 10025
+# The entrypoint comes from the bind-mounted deploy/ directory, so editing it needs no rebuild.
+ENTRYPOINT ["/usr/bin/tini", "--", "bash", "/opt/rustmail/deploy/dev/mta-entrypoint.sh"]

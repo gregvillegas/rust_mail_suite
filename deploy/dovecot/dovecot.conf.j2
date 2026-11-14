@@ -1,0 +1,165 @@
+# Managed by RustMail Suite (rendered from deploy/dovecot/dovecot.conf.j2).
+# Local edits are overwritten the next time scripts/setup-mta.sh runs; change the
+# variables in the env file (see deploy/mta.env.example) instead.
+#
+# Target: Dovecot 2.3 (Ubuntu 22.04: 2.3.16, Debian 12: 2.3.19). Dovecot 2.4 changed
+# the configuration format and these files do not load there.
+#
+# This file is self-contained: it does not include Debian's conf.d directory.
+
+protocols = imap lmtp sieve
+listen = *
+log_path = {{ dovecot_log_path }}
+# Each log line carries the user and session, which makes support requests tractable.
+mail_log_prefix = "%s(%u)<%{pid}><%{session}>: "
+
+# ─── TLS ─────────────────────────────────────────────────────────────────────
+# Required everywhere: clients must negotiate TLS before they may log in.
+ssl = required
+ssl_cert = <{{ tls_cert }}
+ssl_key = <{{ tls_key }}
+ssl_min_protocol = TLSv1.2
+ssl_prefer_server_ciphers = yes
+
+# ─── Authentication ──────────────────────────────────────────────────────────
+auth_mechanisms = plain login
+disable_plaintext_auth = yes
+# Addresses are stored lower-case; make "Alice@Example.com" find "alice@example.com".
+auth_username_format = %Lu
+
+# The webmail logs in as "<user>*<master>" with a shared secret instead of holding
+# users' passwords. After the master password checks out, Dovecot looks the target
+# user up in the normal passdb/userdb without asking for that user's password.
+# The master login only works from the networks listed in the master-users file.
+auth_master_user_separator = *
+passdb {
+  driver = passwd-file
+  args = /etc/dovecot/master-users
+  master = yes
+  result_success = continue
+}
+passdb {
+  driver = sql
+  args = /etc/dovecot/dovecot-sql.conf.ext
+}
+
+# uid, gid, home and quota come from the database (user_query), so a single
+# virtual-mail user serves every mailbox.
+userdb {
+  driver = sql
+  args = /etc/dovecot/dovecot-sql.conf.ext
+}
+
+# Only the virtual-mail user may own mail.
+first_valid_uid = {{ vmail_uid }}
+last_valid_uid = {{ vmail_uid }}
+first_valid_gid = {{ vmail_gid }}
+last_valid_gid = {{ vmail_gid }}
+
+# ─── Mail storage ────────────────────────────────────────────────────────────
+# The home directory (<base>/<domain>/<local>/) is the mailbox's maildir_path
+# from the database; the Maildir lives inside it.
+mail_location = maildir:~/Maildir{{ dovecot_mail_location_extra }}
+
+namespace inbox {
+  inbox = yes
+  separator = /
+  mailbox Drafts {
+    special_use = \Drafts
+    auto = subscribe
+  }
+  mailbox Sent {
+    special_use = \Sent
+    auto = subscribe
+  }
+  mailbox Trash {
+    special_use = \Trash
+    auto = subscribe
+  }
+  mailbox Junk {
+    special_use = \Junk
+    auto = subscribe
+  }
+}
+
+# ─── Plugins ─────────────────────────────────────────────────────────────────
+protocol imap {
+  mail_plugins = $mail_plugins quota imap_quota imap_sieve
+}
+
+protocol lmtp {
+  mail_plugins = $mail_plugins quota sieve
+}
+
+plugin {
+  # Quota is counted in PostgreSQL (table quota_usage) through Dovecot's SQL
+  # dictionary, so RustMail can read live figures. Each user's limit comes from
+  # user_query (quota_rule). Over-quota delivery is refused with a 552.
+  quota = dict:User quota::proxy::quota
+  quota_grace = 10%%
+
+  # Sieve scripts live in the user's home. ManageSieve edits them (Phase 8).
+  sieve = file:~/sieve;active=~/.dovecot.sieve
+  # Runs before the user's own script on every delivery: spam goes to Junk.
+  sieve_before = /etc/dovecot/sieve/10-spam-to-junk.sieve
+  # Learning: moving a message into Junk trains the spam filter on it, moving it
+  # out (other than to Trash) trains it as legitimate mail.
+  sieve_plugins = sieve_imapsieve sieve_extprograms
+  sieve_global_extensions = +vnd.dovecot.pipe
+  sieve_pipe_bin_dir = /usr/lib/rustmail/sieve-pipe
+  imapsieve_mailbox1_name = Junk
+  imapsieve_mailbox1_causes = COPY APPEND
+  imapsieve_mailbox1_before = file:/etc/dovecot/sieve/learn-spam.sieve
+  imapsieve_mailbox2_name = *
+  imapsieve_mailbox2_from = Junk
+  imapsieve_mailbox2_causes = COPY
+  imapsieve_mailbox2_before = file:/etc/dovecot/sieve/learn-ham.sieve
+}
+
+dict {
+  quota = pgsql:/etc/dovecot/dovecot-dict-sql.conf.ext
+}
+
+# ─── Services ────────────────────────────────────────────────────────────────
+service imap-login {
+  inet_listener imap {
+    port = 143
+  }
+  inet_listener imaps {
+    port = 993
+    ssl = yes
+  }
+}
+
+service managesieve-login {
+  inet_listener sieve {
+    port = 4190
+  }
+}
+
+# Postfix delivers mail here.
+service lmtp {
+  unix_listener /var/spool/postfix/private/dovecot-lmtp {
+    mode = 0600
+    user = postfix
+    group = postfix
+  }
+}
+
+# Postfix asks Dovecot to check SMTP logins here.
+service auth {
+  unix_listener /var/spool/postfix/private/auth {
+    mode = 0660
+    user = postfix
+    group = postfix
+  }
+}
+
+# IMAP and LMTP processes run as the virtual-mail user and write quota
+# changes through this socket.
+service dict {
+  unix_listener dict {
+    mode = 0600
+    user = {{ vmail_user }}
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM filter_policies WHERE scope = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d8b5c7d25314667f32103a00347e664c24eb32458cf7d00ef8b89041c9c88a06"
+}

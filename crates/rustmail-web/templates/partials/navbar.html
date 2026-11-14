@@ -1,0 +1,69 @@
+<nav class="navbar navbar-expand-md border-bottom bg-body-tertiary" x-data="navCollapse">
+  <div class="container">
+    <a class="navbar-brand rm-brand" href="/">
+      <svg viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect width="32" height="32" rx="7" fill="#b7410e"/><path d="M6 10.5A2.5 2.5 0 0 1 8.5 8h15a2.5 2.5 0 0 1 2.5 2.5v11a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 6 21.5z" fill="none" stroke="#fff" stroke-width="2"/><path d="m7 11 9 7 9-7" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>{{ ctx.t("app-name") }}
+    </a>
+    <button class="navbar-toggler" type="button" @click="toggle" :aria-expanded="expanded"
+            aria-controls="rm-nav" aria-label="{{ ctx.t("nav-toggle") }}">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div id="rm-nav" class="collapse navbar-collapse" :class="showClass">
+      <ul class="navbar-nav me-auto mb-2 mb-md-0">
+        {% if ctx.user.is_some() %}
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/") %} active{% endif %}" href="/"{% if ctx.nav_active("/") %} aria-current="page"{% endif %}>{{ ctx.t("nav-dashboard") }}</a>
+        </li>
+        {% if ctx.is_admin() %}
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/admin") %} active{% endif %}" href="/admin"{% if ctx.nav_active("/admin") %} aria-current="page"{% endif %}>{{ ctx.t("nav-admin") }}</a>
+        </li>
+        {% endif %}
+        {% endif %}
+      </ul>
+
+      <div class="d-flex align-items-center gap-2">
+        {# Theme #}
+        <div class="dropdown" x-data="themeMenu" @click.outside="close" @keydown.escape.window="close">
+          <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" @click="toggle" :aria-expanded="expanded" aria-haspopup="true">
+            {{ ctx.t("theme-menu") }}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" :class="showClass">
+            <li><button type="button" class="dropdown-item" :class="autoActive" @click="setAuto">{{ ctx.t("theme-auto") }}</button></li>
+            <li><button type="button" class="dropdown-item" :class="lightActive" @click="setLight">{{ ctx.t("theme-light") }}</button></li>
+            <li><button type="button" class="dropdown-item" :class="darkActive" @click="setDark">{{ ctx.t("theme-dark") }}</button></li>
+          </ul>
+        </div>
+
+        {# Language: each button posts its own value; the page reloads in the new language #}
+        <div class="dropdown" x-data="dropdown" @click.outside="close" @keydown.escape.window="close">
+          <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" @click="toggle" :aria-expanded="expanded" aria-haspopup="true">
+            {{ ctx.t("language-menu") }}
+          </button>
+          <form class="dropdown-menu dropdown-menu-end p-0" :class="showClass" hx-post="/lang" hx-swap="none" hx-boost="false">
+            <ul class="list-unstyled m-0">
+              {% for locale in ctx.locales() %}
+              <li><button type="submit" name="lang" value="{{ locale.code() }}" lang="{{ locale.code() }}" class="dropdown-item{% if ctx.is_locale(locale) %} active{% endif %}"{% if ctx.is_locale(locale) %} aria-current="true"{% endif %}>{{ locale.endonym() }}</button></li>
+              {% endfor %}
+            </ul>
+          </form>
+        </div>
+
+        {% if let Some(user) = ctx.user %}
+        {# Account #}
+        <div class="dropdown" x-data="dropdown" @click.outside="close" @keydown.escape.window="close">
+          <button class="btn btn-primary btn-sm dropdown-toggle" type="button" @click="toggle" :aria-expanded="expanded" aria-haspopup="true" aria-label="{{ ctx.t("account-menu") }}">
+            {{ user.name }}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" :class="showClass">
+            <li><span class="dropdown-item-text text-body-secondary small">{{ ctx.t_str("signed-in-as", "name", user.email) }}</span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <button type="button" class="dropdown-item" hx-post="/logout" hx-swap="none" hx-boost="false">{{ ctx.t("sign-out") }}</button>
+            </li>
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>

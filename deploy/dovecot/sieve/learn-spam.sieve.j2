@@ -1,0 +1,3 @@
+# Managed by RustMail Suite. Runs when a message is copied or saved into Junk.
+require ["vnd.dovecot.pipe", "copy", "imapsieve", "environment", "variables"];
+pipe :copy "rustmail-learn" ["spam"];

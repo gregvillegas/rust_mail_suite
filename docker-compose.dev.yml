@@ -23,7 +23,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rustmail}
       POSTGRES_DB: ${POSTGRES_DB:-rustmail}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -59,6 +59,36 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
+  # Postfix + Dovecot for development (Phase 4). Opt in with: make mta-up
+  mta:
+    profiles: ["mta"]
+    build:
+      context: .
+      dockerfile: deploy/dev/Dockerfile.mta
+      args:
+        VMAIL_UID: "${VMAIL_UID:-501}"
+        VMAIL_GID: "${VMAIL_GID:-20}"
+    container_name: rustmail-mta
+    hostname: mail.rustmail.test
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    ports:
+      - "127.0.0.1:2525:25"
+      - "127.0.0.1:5587:587"
+      - "127.0.0.1:1143:143"
+      - "127.0.0.1:1993:993"
+      - "127.0.0.1:4190:4190"
+      - "127.0.0.1:10025:10025"   # re-entry port: quarantine release
+    volumes:
+      - ./deploy:/opt/rustmail/deploy:ro
+      - ./scripts:/opt/rustmail/scripts:ro
+      - ./var/vhosts:/var/mail/vhosts
+      - ./var/quarantine:/var/lib/rustmail/quarantine
+      - ./var/log:/var/log/rustmail
+      - ./var/clamav:/var/lib/clamav
 volumes:
   postgres_data:
   redis_data:
