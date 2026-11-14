@@ -11,6 +11,16 @@ test, so the CDN and local copies cannot drift apart unnoticed.
 | htmx | 2.0.11 | 0BSD | `htmx/2.0.11/htmx.min.js` | `https://cdn.jsdelivr.net/npm/htmx.org@2.0.11/dist/htmx.min.js` |
 | Alpine.js (CSP build) | 3.17.5 | MIT | `alpine-csp/3.17.5/alpine-csp.min.js` | `https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.17.5/dist/cdn.min.js` |
 
+Chart.js is the one exception: it is **local only** (no CDN mode, so the Content-Security-Policy
+never needs a chart origin) and is loaded on demand by `static/js/admin.js` on the quota page.
+
+| Library | Version | Licence | Local path | Source |
+|---------|---------|---------|-----------|--------|
+| Chart.js | 4.4.7 | MIT | `chartjs/4.4.7/chart.umd.min.js` (+ `LICENSE.md`) | `https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.js` |
+
+SHA-384 of the file (identical on jsDelivr and unpkg):
+`zYPBGXwO4633CABX/5Spf6emCKUJCfoOkhOMYyxMsatqQZPnDblmmOewfjsIVWCM`.
+
 Bootstrap's JavaScript is intentionally **not** included: menus, the collapse and
 the dialog are built with Alpine.
 

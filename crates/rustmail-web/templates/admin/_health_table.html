@@ -1,0 +1,17 @@
+<p>
+  <span class="badge text-bg-{{ overall_class }} fs-6" data-testid="health-overall">{{ ctx.t(overall_key) }}</span>
+</p>
+<div class="table-responsive">
+  <table class="table table-sm align-middle" data-testid="health-table">
+    <thead><tr><th scope="col">{{ ctx.t("admin-health-col-check") }}</th><th scope="col">{{ ctx.t("admin-health-col-status") }}</th><th scope="col">{{ ctx.t("admin-health-col-detail") }}</th></tr></thead>
+    <tbody>
+      {% for c in checks %}
+      <tr>
+        <th scope="row">{{ ctx.t(c.label_key) }}{% if !c.subject.is_empty() %} <span class="text-body-secondary fw-normal">{{ c.subject }}</span>{% endif %}</th>
+        <td><span class="badge text-bg-{{ c.class }}">{{ ctx.t(c.level_key) }}</span></td>
+        <td class="text-break small">{{ c.detail }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>

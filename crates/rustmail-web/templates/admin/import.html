@@ -1,0 +1,19 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("admin-import") }}{% endblock %}
+{% block admin_content %}
+<h1 class="h3 mb-3">{{ ctx.t("admin-import") }}</h1>
+<p class="text-body-secondary">{{ ctx.t("admin-import-intro") }}</p>
+<p class="small"><code>email,name,role,quota_mb,password</code></p>
+<form hx-post="/admin/import/preview" hx-encoding="multipart/form-data" hx-target="#import-area" hx-swap="innerHTML" hx-boost="false" hx-disabled-elt="#import-preview-btn" class="row g-3 rm-w-60">
+  <div class="col-12">
+    <label for="i-file" class="form-label">{{ ctx.t("admin-import-file") }}</label>
+    <input id="i-file" name="file" type="file" class="form-control" accept=".csv,text/csv,text/plain">
+  </div>
+  <div class="col-12">
+    <label for="i-csv" class="form-label">{{ ctx.t("admin-import-paste") }}</label>
+    <textarea id="i-csv" name="csv" class="form-control font-monospace" rows="6" spellcheck="false"></textarea>
+  </div>
+  <div class="col-12"><button id="import-preview-btn" type="submit" class="btn btn-primary">{{ ctx.t("admin-import-preview") }}</button></div>
+</form>
+<div id="import-area" class="mt-4" aria-live="polite"></div>
+{% endblock %}

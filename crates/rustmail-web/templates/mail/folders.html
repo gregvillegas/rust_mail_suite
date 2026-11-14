@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.t("mail-manage-folders") }}{% endblock %}
+{% block content %}
+<div class="container py-3">
+  <p><a href="/mail">{{ ctx.t("mail-back") }}</a></p>
+  <h1 class="h4 mb-3">{{ ctx.t("mail-manage-folders") }}</h1>
+  {% if let Some(n) = notice %}
+  <div class="alert alert-{{ n.class }} py-2" role="status">{{ ctx.t(n.key) }}</div>
+  {% endif %}
+  <div id="folder-status" role="status" aria-live="polite"></div>
+
+  <form class="row g-2 align-items-end mb-4" hx-post="/mail/folders/create" hx-target="#folder-status" hx-swap="innerHTML" hx-boost="false">
+    <div class="col-sm-5">
+      <label class="form-label" for="new-folder">{{ ctx.t("mail-folders-new") }}</label>
+      <input id="new-folder" class="form-control" type="text" name="name" maxlength="200" required autocomplete="off">
+    </div>
+    <div class="col-sm-4">
+      <label class="form-label" for="new-parent">{{ ctx.t("mail-folders-inside") }}</label>
+      <select id="new-parent" class="form-select" name="parent">
+        <option value="">{{ ctx.t("mail-folders-top") }}</option>
+        {% for r in rows %}{% if r.selectable %}<option value="{{ r.name }}">{{ r.label }}</option>{% endif %}{% endfor %}
+      </select>
+    </div>
+    <div class="col-auto"><button class="btn btn-primary" type="submit">{{ ctx.t("mail-folders-create") }}</button></div>
+  </form>
+
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th scope="col">{{ ctx.t("mail-folder") }}</th>
+          <th scope="col" class="text-end">{{ ctx.t("mail-folders-messages") }}</th>
+          <th scope="col" class="text-end">{{ ctx.t("mail-unread") }}</th>
+          <th scope="col"><span class="visually-hidden">{{ ctx.t("mail-actions") }}</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <th scope="row" class="fw-normal rm-depth-{{ r.depth }}">{{ r.label }}</th>
+          <td class="text-end">{{ r.total }}</td>
+          <td class="text-end">{{ r.unread }}</td>
+          <td>
+            {% if !r.standard %}
+            <div class="d-flex flex-wrap gap-2 justify-content-end">
+              <form class="d-flex gap-1" hx-post="/mail/folders/rename" hx-target="#folder-status" hx-swap="innerHTML" hx-boost="false">
+                <input type="hidden" name="name" value="{{ r.name }}">
+                <label class="visually-hidden" for="rename-{{ loop.index }}">{{ ctx.t("mail-folders-rename-to") }}</label>
+                <input id="rename-{{ loop.index }}" class="form-control form-control-sm" type="text" name="new_name" maxlength="200" placeholder="{{ ctx.t("mail-folders-rename-to") }}" required autocomplete="off">
+                <button class="btn btn-outline-secondary btn-sm" type="submit">{{ ctx.t("mail-folders-rename") }}</button>
+              </form>
+              <form hx-post="/mail/folders/delete" hx-target="#folder-status" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("mail-folders-confirm-delete") }}">
+                <input type="hidden" name="name" value="{{ r.name }}">
+                <button class="btn btn-outline-danger btn-sm" type="submit">{{ ctx.t("mail-delete") }}</button>
+              </form>
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -52,8 +52,16 @@ pub fn plain_initial_response(user: &str, master_user: &str, master_password: &s
 ///
 /// # Errors
 /// [`MailError::Send`] with the server's explanation, or connection/TLS errors.
-pub async fn send(config: &MailConfig, user: &str, sender: &str, message: &BuiltMessage) -> MailResult<()> {
-    if sender.chars().any(|c| c.is_control() || c == '<' || c == '>' || c.is_whitespace()) {
+pub async fn send(
+    config: &MailConfig,
+    user: &str,
+    sender: &str,
+    message: &BuiltMessage,
+) -> MailResult<()> {
+    if sender
+        .chars()
+        .any(|c| c.is_control() || c == '<' || c == '>' || c.is_whitespace())
+    {
         return Err(MailError::Invalid("invalid sender".into()));
     }
     if message.recipients.is_empty() {
@@ -68,39 +76,74 @@ pub async fn send(config: &MailConfig, user: &str, sender: &str, message: &Built
         .map_err(|_| MailError::Send("the mail server took too long".into()))?
 }
 
-async fn dialogue(config: &MailConfig, user: &str, sender: &str, message: &BuiltMessage) -> MailResult<()> {
+async fn dialogue(
+    config: &MailConfig,
+    user: &str,
+    sender: &str,
+    message: &BuiltMessage,
+) -> MailResult<()> {
     let host = &config.smtp_host;
     let mut plain = BufReader::new(tls::tcp(host, config.smtp_port).await?);
 
-    expect(&reply(&mut plain).await.map_err(|e| io(&e))?, &[220], "the server did not greet us")?;
-    command(&mut plain, &format!("EHLO {}\r\n", config.helo_name)).await.map_err(|e| io(&e))?;
+    expect(
+        &reply(&mut plain).await.map_err(|e| io(&e))?,
+        &[220],
+        "the server did not greet us",
+    )?;
+    command(&mut plain, &format!("EHLO {}\r\n", config.helo_name))
+        .await
+        .map_err(|e| io(&e))?;
     let ehlo = reply(&mut plain).await.map_err(|e| io(&e))?;
     expect(&ehlo, &[250], "EHLO")?;
     if !ehlo.text.to_ascii_uppercase().contains("STARTTLS") {
         // Never send the master credentials over an unencrypted connection.
-        return Err(MailError::Tls("the submission server does not offer STARTTLS".into()));
+        return Err(MailError::Tls(
+            "the submission server does not offer STARTTLS".into(),
+        ));
     }
-    command(&mut plain, "STARTTLS\r\n").await.map_err(|e| io(&e))?;
-    expect(&reply(&mut plain).await.map_err(|e| io(&e))?, &[220], "STARTTLS")?;
+    command(&mut plain, "STARTTLS\r\n")
+        .await
+        .map_err(|e| io(&e))?;
+    expect(
+        &reply(&mut plain).await.map_err(|e| io(&e))?,
+        &[220],
+        "STARTTLS",
+    )?;
 
     let secure = tls::upgrade(config, host, plain.into_inner()).await?;
     let mut conn = BufReader::new(secure);
-    command(&mut conn, &format!("EHLO {}\r\n", config.helo_name)).await.map_err(|e| io(&e))?;
-    expect(&reply(&mut conn).await.map_err(|e| io(&e))?, &[250], "EHLO after STARTTLS")?;
+    command(&mut conn, &format!("EHLO {}\r\n", config.helo_name))
+        .await
+        .map_err(|e| io(&e))?;
+    expect(
+        &reply(&mut conn).await.map_err(|e| io(&e))?,
+        &[250],
+        "EHLO after STARTTLS",
+    )?;
 
     let auth = plain_initial_response(user, &config.master_user, &config.master_password);
-    command(&mut conn, &format!("AUTH PLAIN {auth}\r\n")).await.map_err(|e| io(&e))?;
+    command(&mut conn, &format!("AUTH PLAIN {auth}\r\n"))
+        .await
+        .map_err(|e| io(&e))?;
     let auth_reply = reply(&mut conn).await.map_err(|e| io(&e))?;
     if auth_reply.code != 235 {
         tracing::warn!(code = auth_reply.code, "submission login refused");
         return Err(MailError::Send("the mail server refused the login".into()));
     }
 
-    command(&mut conn, &format!("MAIL FROM:<{sender}>\r\n")).await.map_err(|e| io(&e))?;
-    expect(&reply(&mut conn).await.map_err(|e| io(&e))?, &[250], "the sender address was refused")?;
+    command(&mut conn, &format!("MAIL FROM:<{sender}>\r\n"))
+        .await
+        .map_err(|e| io(&e))?;
+    expect(
+        &reply(&mut conn).await.map_err(|e| io(&e))?,
+        &[250],
+        "the sender address was refused",
+    )?;
 
     for recipient in &message.recipients {
-        command(&mut conn, &format!("RCPT TO:<{recipient}>\r\n")).await.map_err(|e| io(&e))?;
+        command(&mut conn, &format!("RCPT TO:<{recipient}>\r\n"))
+            .await
+            .map_err(|e| io(&e))?;
         let r = reply(&mut conn).await.map_err(|e| io(&e))?;
         if !matches!(r.code, 250 | 251) {
             let _ = command(&mut conn, "RSET\r\nQUIT\r\n").await;
@@ -113,9 +156,17 @@ async fn dialogue(config: &MailConfig, user: &str, sender: &str, message: &Built
     conn.write_all(&dot_stuff(&message.bytes))
         .await
         .map_err(|e| MailError::Send(e.to_string()))?;
-    conn.write_all(b".\r\n").await.map_err(|e| MailError::Send(e.to_string()))?;
-    conn.flush().await.map_err(|e| MailError::Send(e.to_string()))?;
-    expect(&reply(&mut conn).await.map_err(|e| io(&e))?, &[250], "the message was refused")?;
+    conn.write_all(b".\r\n")
+        .await
+        .map_err(|e| MailError::Send(e.to_string()))?;
+    conn.flush()
+        .await
+        .map_err(|e| MailError::Send(e.to_string()))?;
+    expect(
+        &reply(&mut conn).await.map_err(|e| io(&e))?,
+        &[250],
+        "the message was refused",
+    )?;
     // Queued. A failure to say goodbye changes nothing.
     let _ = command(&mut conn, "QUIT\r\n").await;
     Ok(())
@@ -145,11 +196,27 @@ mod tests {
             master_password: "x".into(),
             helo_name: "rustmail.local".into(),
         };
-        let message = BuiltMessage { bytes: b"x".to_vec(), message_id: "i".into(), recipients: vec![] };
-        assert!(matches!(send(&config, "a@b.co", "a@b.co", &message).await, Err(MailError::Invalid(_))));
-        let message = BuiltMessage { recipients: vec!["r@x.co".into()], ..message };
-        assert!(matches!(send(&config, "a@b.co", "a@b.co>\r\nRCPT", &message).await, Err(MailError::Invalid(_))));
+        let message = BuiltMessage {
+            bytes: b"x".to_vec(),
+            message_id: "i".into(),
+            recipients: vec![],
+        };
+        assert!(matches!(
+            send(&config, "a@b.co", "a@b.co", &message).await,
+            Err(MailError::Invalid(_))
+        ));
+        let message = BuiltMessage {
+            recipients: vec!["r@x.co".into()],
+            ..message
+        };
+        assert!(matches!(
+            send(&config, "a@b.co", "a@b.co>\r\nRCPT", &message).await,
+            Err(MailError::Invalid(_))
+        ));
         // Valid input but nothing listening: a connection error, not a panic or a hang.
-        assert!(matches!(send(&config, "a@b.co", "a@b.co", &message).await, Err(MailError::Connect(_))));
+        assert!(matches!(
+            send(&config, "a@b.co", "a@b.co", &message).await,
+            Err(MailError::Connect(_))
+        ));
     }
 }

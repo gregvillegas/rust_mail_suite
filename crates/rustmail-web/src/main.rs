@@ -62,6 +62,18 @@ async fn main() -> Result<()> {
                 web.static_dir.display()
             )
         })?;
+    // Webmail needs the master login for Dovecot and Postfix.
+    let state = match rustmail_imap::MailConfig::from_env().context("webmail settings")? {
+        Some(config) => {
+            tracing::info!(imap = %config.imap_host, "webmail enabled");
+            let index = rustmail_core::mailindex::MailIndex::new(state.pool.clone());
+            state.with_mail(rustmail_web::mail::MailService::new(config, index))
+        }
+        None => {
+            tracing::info!("MAIL_MASTER_PASSWORD is not set; webmail stays disabled");
+            state
+        }
+    };
     // The quarantine pages need to know where Amavis keeps its files.
     let state = match QuarantineConfig::from_env() {
         Ok(config) => {
@@ -73,6 +85,17 @@ async fn main() -> Result<()> {
             tracing::info!("QUARANTINE_DIR is not set; the quarantine pages stay disabled");
             state
         }
+    };
+    // Creating accounts also creates their Maildirs, so the console needs the mail base.
+    let state = if std::env::var_os("VMAIL_BASE").is_some() {
+        let config = rustmail_core::provisioning::ProvisionerConfig::from_env()
+            .context("VMAIL_BASE settings")?;
+        let provisioner = rustmail_core::provisioning::MailboxProvisioner::new(config);
+        tracing::info!(base = %provisioner.base_dir().display(), "mailbox provisioning enabled");
+        state.with_mail_dir(provisioner)
+    } else {
+        tracing::warn!("VMAIL_BASE is not set; the console cannot create or remove mailboxes");
+        state
     };
     let limits = RateLimits {
         login: web.login_rate,

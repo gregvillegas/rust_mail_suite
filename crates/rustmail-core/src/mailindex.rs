@@ -107,7 +107,12 @@ pub fn search_terms(input: &str) -> Option<String> {
         .chars()
         .take(MAX_QUERY_CHARS)
         .map(|c| {
-            if c.is_control() || matches!(c, '@' | '.' | '_' | '-' | '<' | '>' | ',' | ';' | ':' | '(' | ')' | '[' | ']') {
+            if c.is_control()
+                || matches!(
+                    c,
+                    '@' | '.' | '_' | '-' | '<' | '>' | ',' | ';' | ':' | '(' | ')' | '[' | ']'
+                )
+            {
                 ' '
             } else {
                 c
@@ -354,10 +359,19 @@ mod tests {
 
     #[test]
     fn search_text_is_prepared_like_the_index() {
-        assert_eq!(search_terms("bob@example.com").as_deref(), Some("bob example com"));
-        assert_eq!(search_terms("  Hello,   World ").as_deref(), Some("Hello World"));
+        assert_eq!(
+            search_terms("bob@example.com").as_deref(),
+            Some("bob example com")
+        );
+        assert_eq!(
+            search_terms("  Hello,   World ").as_deref(),
+            Some("Hello World")
+        );
         assert_eq!(search_terms("a_b-c").as_deref(), Some("a b c"));
-        assert_eq!(search_terms("\"quoted phrase\"").as_deref(), Some("\"quoted phrase\""));
+        assert_eq!(
+            search_terms("\"quoted phrase\"").as_deref(),
+            Some("\"quoted phrase\"")
+        );
         assert_eq!(search_terms("@.-_"), None);
         assert_eq!(search_terms("   "), None);
         assert_eq!(search_terms("a\nb\0c").as_deref(), Some("a b c"));

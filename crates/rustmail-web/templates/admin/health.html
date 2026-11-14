@@ -1,0 +1,9 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("admin-health") }}{% endblock %}
+{% block admin_content %}
+<h1 class="h3 mb-2">{{ ctx.t("admin-health") }}</h1>
+<p class="text-body-secondary">{{ ctx.t("admin-health-intro") }}</p>
+<div id="health" hx-get="/admin/health/data" hx-trigger="every 30s" hx-swap="innerHTML" hx-boost="false">
+  {% include "admin/_health_table.html" %}
+</div>
+{% endblock %}

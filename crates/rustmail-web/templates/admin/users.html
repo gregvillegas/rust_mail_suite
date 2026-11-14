@@ -1,0 +1,85 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("admin-users") }}{% endblock %}
+{% block admin_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <h1 class="h3 mb-0">{{ ctx.t("admin-users") }}</h1>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="/admin/import">{{ ctx.t("admin-import") }}</a>
+    <a class="btn btn-primary btn-sm" href="{{ new_url }}">{{ ctx.t("admin-user-new") }}</a>
+  </div>
+</div>
+{% if let Some((class, key)) = notice %}
+<div class="alert alert-{{ class }}" role="status">{{ ctx.t(key) }}</div>
+{% endif %}
+<form method="get" action="/admin/users" class="row g-2 align-items-end mb-3">
+  {% if show_domain_filter %}
+  <div class="col-sm-6 col-md-3">
+    <label for="u-domain" class="form-label">{{ ctx.t("admin-col-domain") }}</label>
+    <select id="u-domain" name="domain" class="form-select">
+      {% for o in domain_options %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div class="col-sm-6 col-md-3">
+    <label for="u-search" class="form-label">{{ ctx.t("admin-filter-search") }}</label>
+    <input id="u-search" name="q" type="search" class="form-control" value="{{ search }}" maxlength="200" autocomplete="off">
+  </div>
+  <div class="col-sm-6 col-md-2">
+    <label for="u-status" class="form-label">{{ ctx.t("admin-col-status") }}</label>
+    <select id="u-status" name="status" class="form-select">
+      {% for o in status_options %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-6 col-md-2">
+    <label for="u-role" class="form-label">{{ ctx.t("admin-col-role") }}</label>
+    <select id="u-role" name="role" class="form-select">
+      {% for o in role_options %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-filter-apply") }}</button></div>
+</form>
+<p class="small text-body-secondary mb-2">{{ ctx.t_num("admin-total", "count", total) }}</p>
+{% if rows.is_empty() %}
+<p>{{ ctx.t("admin-users-empty") }}</p>
+{% else %}
+<div class="table-responsive">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th scope="col">{{ ctx.t("admin-col-email") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-name") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-role") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-status") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-usage") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-last-login") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <th scope="row" class="text-break"><a href="/admin/users/{{ row.id }}">{{ row.email }}</a></th>
+        <td class="text-break">{{ row.name }}</td>
+        <td>{{ ctx.t(row.role_key) }}</td>
+        <td><span class="badge text-bg-{{ row.status_class }}">{{ ctx.t(row.status_key) }}</span></td>
+        <td class="text-nowrap">{{ row.used }} / {{ row.quota }}{% if let Some(p) = row.percent %} <span class="badge text-bg-{{ row.bar_class }}">{{ p }}%</span>{% endif %}</td>
+        <td class="text-nowrap small">{{ row.last_login }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if prev_url.is_some() || next_url.is_some() %}
+<nav aria-label="{{ ctx.t("quarantine-pagination") }}">
+  <ul class="pagination">
+    <li class="page-item{% if prev_url.is_none() %} disabled{% endif %}">
+      {% if let Some(url) = prev_url %}<a class="page-link" href="{{ url }}">{{ ctx.t("quarantine-prev") }}</a>{% else %}<span class="page-link">{{ ctx.t("quarantine-prev") }}</span>{% endif %}
+    </li>
+    <li class="page-item active" aria-current="page"><span class="page-link">{{ ctx.t_num("quarantine-page", "page", page) }}</span></li>
+    <li class="page-item{% if next_url.is_none() %} disabled{% endif %}">
+      {% if let Some(url) = next_url %}<a class="page-link" href="{{ url }}">{{ ctx.t("quarantine-next") }}</a>{% else %}<span class="page-link">{{ ctx.t("quarantine-next") }}</span>{% endif %}
+    </li>
+  </ul>
+</nav>
+{% endif %}
+{% endif %}
+{% endblock %}

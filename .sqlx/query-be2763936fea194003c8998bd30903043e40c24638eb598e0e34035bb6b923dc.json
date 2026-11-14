@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT domain_id, address, destination FROM aliases WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "domain_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "address",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "destination",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "be2763936fea194003c8998bd30903043e40c24638eb598e0e34035bb6b923dc"
+}

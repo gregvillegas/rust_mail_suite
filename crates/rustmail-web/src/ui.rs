@@ -323,6 +323,10 @@ pub enum PageError {
     Forbidden,
     /// 500.
     Internal,
+    /// 400: the request itself is wrong (bad folder name, bad address).
+    BadRequest,
+    /// 503: a service the page depends on, such as the mail server, is not reachable.
+    Unavailable,
 }
 
 impl PageError {
@@ -333,6 +337,8 @@ impl PageError {
             Self::NotFound => StatusCode::NOT_FOUND,
             Self::Forbidden => StatusCode::FORBIDDEN,
             Self::Internal => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::BadRequest => StatusCode::BAD_REQUEST,
+            Self::Unavailable => StatusCode::SERVICE_UNAVAILABLE,
         }
     }
 

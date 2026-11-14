@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT count(*) AS \"n!\" FROM aliases a\n               WHERE ($1::uuid IS NULL OR a.domain_id = $1)\n                 AND ($2::text IS NULL OR a.address ILIKE $2 OR a.destination ILIKE $2)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "8087c40995614ce913b2aeca585de859b6c744beeea06011b83a2eea340760df"
+}

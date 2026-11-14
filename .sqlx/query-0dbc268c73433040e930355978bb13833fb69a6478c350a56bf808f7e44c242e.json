@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT (SELECT max(updated_at) FROM pipeline_log_state) AS last_read,\n                      (SELECT count(*) FROM pipeline_events WHERE occurred_at > now() - interval '1 hour') AS \"events!\",\n                      (SELECT count(*) FROM quarantine_items WHERE status = 'held') AS \"held!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "last_read",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 1,
+        "name": "events!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "held!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "0dbc268c73433040e930355978bb13833fb69a6478c350a56bf808f7e44c242e"
+}

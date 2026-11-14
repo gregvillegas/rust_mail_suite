@@ -559,7 +559,12 @@ try {
       await login(p2, E.url, `${who}@example.com`);
       await p2.waitForURL(E.url + '/');
       const r = await p2.goto(E.url + '/admin/quarantine');
-      check(`${who} gets "Access denied", not the list`, r.status() === 403 && (await p2.getByText('Access denied').first().isVisible()), String(r.status()));
+      if (who === 'dana') {
+        // Phase 7: domain administrators may use it, for their own domain.
+        check('dana (domain admin) can open the quarantine', r.status() === 200 && (await p2.getByRole('heading', { name: 'Quarantine' }).isVisible()), String(r.status()));
+      } else {
+        check(`${who} gets "Access denied", not the list`, r.status() === 403 && (await p2.getByText('Access denied').first().isVisible()), String(r.status()));
+      }
       await c2.close();
     }
     E.stop(); sink.close();

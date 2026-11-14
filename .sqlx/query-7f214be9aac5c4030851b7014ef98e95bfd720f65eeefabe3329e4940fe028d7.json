@@ -1,0 +1,93 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT u.id, u.domain_id, d.name AS domain, u.email, u.display_name,\n                      u.role::text AS \"role!\", u.status::text AS \"status!\", u.last_login_at, u.created_at,\n                      COALESCE(m.quota_bytes, d.default_quota_bytes) AS quota_bytes,\n                      COALESCE(q.bytes_used, 0)::bigint AS \"bytes_used!\",\n                      COALESCE(q.messages_count, 0)::bigint AS \"messages!\"\n               FROM users u\n               JOIN domains d ON d.id = u.domain_id\n               LEFT JOIN mailboxes m ON m.user_id = u.id\n               LEFT JOIN quota_usage q ON q.mailbox_id = m.id\n               WHERE ($1::uuid IS NULL OR u.domain_id = $1)\n                 AND ($2::text IS NULL OR u.email ILIKE $2 OR u.display_name ILIKE $2)\n                 AND ($3::text IS NULL OR u.status::text = $3)\n                 AND ($4::text IS NULL OR u.role::text = $4)\n               ORDER BY u.email\n               LIMIT $5 OFFSET $6",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "domain_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "domain",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "role!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "status!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "last_login_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "quota_bytes",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "bytes_used!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 11,
+        "name": "messages!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      null,
+      true,
+      false,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "7f214be9aac5c4030851b7014ef98e95bfd720f65eeefabe3329e4940fe028d7"
+}

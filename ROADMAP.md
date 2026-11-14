@@ -99,7 +99,7 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 
 ---
 
-## Phase 6 — Webmail Client (Inbox, Compose, Folders) ☐
+## Phase 6 — Webmail Client (Inbox, Compose, Folders) ☑
 **Deliverables**
 - Rust IMAP client (`async-imap`) reading messages server-side
 - Routes: `/mail/inbox`, `/mail/message/:uid`, `/mail/compose`, `/mail/folders`
@@ -111,9 +111,11 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 
 **Verification:** login → inbox → open → reply → send → recipient receives.
 
+**Status:** complete. See `PHASE_6_COMPLETE.md`.
+
 ---
 
-## Phase 7 — Admin Console (Domain/User/Quota Management) ☐
+## Phase 7 — Admin Console (Domain/User/Quota Management) ☑
 **Deliverables**
 - `/admin` routes gated by role
 - CRUD: domains, users, aliases, groups
@@ -123,6 +125,7 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 - Bulk CSV import for users
 
 **Verification:** admin creates domain + 3 users → all log in; quotas enforced.
+**Status:** complete. See `PHASE_7_COMPLETE.md`.
 
 ---
 

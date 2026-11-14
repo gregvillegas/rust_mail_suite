@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block content %}
 <div class="container-fluid">
   <div class="row">
@@ -10,7 +9,30 @@
         </li>
         {% if ctx.is_super_admin() %}
         <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/admin/domains") %} active{% endif %}" href="/admin/domains"{% if ctx.nav_active("/admin/domains") %} aria-current="page"{% endif %}>{{ ctx.t("admin-domains") }}</a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/admin/users") || ctx.nav_active("/admin/import") %} active{% endif %}" href="/admin/users"{% if ctx.nav_active("/admin/users") %} aria-current="page"{% endif %}>{{ ctx.t("admin-users") }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/admin/aliases") %} active{% endif %}" href="/admin/aliases"{% if ctx.nav_active("/admin/aliases") %} aria-current="page"{% endif %}>{{ ctx.t("admin-aliases") }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/admin/groups") %} active{% endif %}" href="/admin/groups"{% if ctx.nav_active("/admin/groups") %} aria-current="page"{% endif %}>{{ ctx.t("admin-groups") }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/admin/quota") %} active{% endif %}" href="/admin/quota"{% if ctx.nav_active("/admin/quota") %} aria-current="page"{% endif %}>{{ ctx.t("admin-quota") }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/admin/audit") %} active{% endif %}" href="/admin/audit"{% if ctx.nav_active("/admin/audit") %} aria-current="page"{% endif %}>{{ ctx.t("admin-audit") }}</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link{% if ctx.nav_active("/admin/quarantine") %} active{% endif %}" href="/admin/quarantine"{% if ctx.nav_active("/admin/quarantine") %} aria-current="page"{% endif %}>{{ ctx.t("admin-quarantine") }}</a>
+        </li>
+        {% if ctx.is_super_admin() %}
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/admin/health") %} active{% endif %}" href="/admin/health"{% if ctx.nav_active("/admin/health") %} aria-current="page"{% endif %}>{{ ctx.t("admin-health") }}</a>
         </li>
         {% endif %}
       </ul>

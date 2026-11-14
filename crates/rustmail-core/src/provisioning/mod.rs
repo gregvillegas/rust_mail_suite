@@ -179,6 +179,51 @@ impl MailboxProvisioner {
         })
     }
 
+    /// Removes a user's whole home directory (`<domain>/<local>/`): the Maildir,
+    /// Sieve scripts and everything else in it. Returns whether anything was removed.
+    ///
+    /// This is irreversible, so it is strict: `home` must be exactly two safe path
+    /// components, the directory must be a real directory (not a symlink) inside the
+    /// mail base, and symlinks inside it are removed, never followed.
+    ///
+    /// # Errors
+    /// [`Error::Provisioning`] if the path is unsafe or removal fails.
+    pub fn remove_home(&self, home: &str) -> Result<bool> {
+        let components = safe_components(home)?;
+        if components.len() != 2 {
+            return Err(Error::Provisioning(format!(
+                "'{home}' is not a <domain>/<user> directory; refusing to remove it"
+            )));
+        }
+        let base = self.checked_base()?;
+        let mut path = base.clone();
+        for component in &components {
+            path.push(component);
+        }
+        match fs::symlink_metadata(&path) {
+            Ok(meta) if meta.file_type().is_symlink() || !meta.is_dir() => {
+                Err(Error::Provisioning(format!(
+                    "{} is not a plain directory; refusing to remove it",
+                    path.display()
+                )))
+            }
+            Ok(_) => {
+                let real = fs::canonicalize(&path).map_err(|e| io_error(&path, &e))?;
+                let real_base = fs::canonicalize(&base).map_err(|e| io_error(&base, &e))?;
+                if !real.starts_with(&real_base) || real == real_base {
+                    return Err(Error::Provisioning(format!(
+                        "{} is outside the mail base",
+                        path.display()
+                    )));
+                }
+                fs::remove_dir_all(&real).map_err(|e| io_error(&real, &e))?;
+                Ok(true)
+            }
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(false),
+            Err(e) => Err(io_error(&path, &e)),
+        }
+    }
+
     /// Whether the full Maildir skeleton for `home` exists. Never creates anything.
     ///
     /// # Errors

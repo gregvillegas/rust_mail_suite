@@ -11,6 +11,7 @@
 //! | `/partials/activity` | GET | user | recent sign-in table |
 //! | `/admin` | GET | admin | administration landing page |
 //! | `/admin/partials/overview` | GET | admin | overview cards |
+//! | `/mail…` | GET, POST, WebSocket | signed in | webmail (see [`crate::mail_pages`]) |
 //! | `/admin/quarantine…` | GET, POST | super admin | quarantine (see [`crate::quarantine_pages`]) |
 //!
 //! All state-changing routes sit behind the CSRF middleware (see `app`).
@@ -43,6 +44,7 @@ use crate::ui::{
     DashboardPage, LoginFormPartial, LoginFormView, LoginPage, PageCtx, PageError, RenewPage,
     UserView,
 };
+use crate::{admin_pages, admin_reports, mail_pages, mail_ws};
 
 const HX_REDIRECT: HeaderName = HeaderName::from_static("hx-redirect");
 const HX_REFRESH: HeaderName = HeaderName::from_static("hx-refresh");
@@ -70,6 +72,64 @@ pub fn routes() -> PageRoutes {
             .route("/logout-all", post(logout_all_submit))
             .route("/lang", post(language_submit))
             .route(
+                "/mail/send",
+                post(mail_pages::send).layer(axum::extract::DefaultBodyLimit::max(
+                    mail_pages::SEND_BODY_LIMIT,
+                )),
+            )
+            .route("/mail/message/{uid}/flag", post(mail_pages::flag))
+            .route("/mail/message/{uid}/move", post(mail_pages::move_to))
+            .route("/mail/message/{uid}/delete", post(mail_pages::delete))
+            .route("/mail/message/{uid}/spam", post(mail_pages::spam))
+            .route("/mail/folders/create", post(mail_pages::folder_create))
+            .route("/mail/folders/rename", post(mail_pages::folder_rename))
+            .route("/mail/folders/delete", post(mail_pages::folder_delete))
+            .route("/admin/domains", post(admin_pages::domain_create))
+            .route("/admin/domains/{id}", post(admin_pages::domain_update))
+            .route(
+                "/admin/domains/{id}/delete",
+                post(admin_pages::domain_delete),
+            )
+            .route("/admin/users", post(admin_pages::user_create))
+            .route("/admin/users/{id}", post(admin_pages::user_update))
+            .route("/admin/users/{id}/status", post(admin_pages::user_status))
+            .route(
+                "/admin/users/{id}/password",
+                post(admin_pages::user_password),
+            )
+            .route("/admin/users/{id}/unlock", post(admin_pages::user_unlock))
+            .route(
+                "/admin/users/{id}/sessions",
+                post(admin_pages::user_sessions),
+            )
+            .route("/admin/users/{id}/delete", post(admin_pages::user_delete))
+            .route("/admin/aliases", post(admin_pages::alias_create))
+            .route(
+                "/admin/aliases/{id}/toggle",
+                post(admin_pages::alias_toggle),
+            )
+            .route(
+                "/admin/aliases/{id}/delete",
+                post(admin_pages::alias_delete),
+            )
+            .route("/admin/groups", post(admin_pages::group_create))
+            .route(
+                "/admin/groups/{id}/members",
+                post(admin_pages::group_member_add),
+            )
+            .route(
+                "/admin/groups/{id}/members/{user}/remove",
+                post(admin_pages::group_member_remove),
+            )
+            .route("/admin/groups/{id}/delete", post(admin_pages::group_delete))
+            .route(
+                "/admin/import/preview",
+                post(admin_reports::import_preview).layer(axum::extract::DefaultBodyLimit::max(
+                    admin_reports::IMPORT_BODY_LIMIT,
+                )),
+            )
+            .route("/admin/import/apply", post(admin_reports::import_apply))
+            .route(
                 "/admin/quarantine/{id}/release",
                 post(quarantine_pages::release),
             )
@@ -83,6 +143,38 @@ pub fn routes() -> PageRoutes {
             .route("/session/renew", get(renew_page))
             .route("/partials/activity", get(activity_partial))
             .route("/admin", get(admin_index))
+            .route("/mail", get(mail_pages::index))
+            .route("/mail/inbox", get(mail_pages::inbox_redirect))
+            .route("/mail/list", get(mail_pages::list_partial))
+            .route("/mail/folders", get(mail_pages::folders_page))
+            .route("/mail/folders/nav", get(mail_pages::folder_nav_partial))
+            .route("/mail/compose", get(mail_pages::compose_page))
+            .route("/mail/message/{uid}", get(mail_pages::preview))
+            .route("/mail/message/{uid}/body", get(mail_pages::body))
+            .route(
+                "/mail/message/{uid}/attachment/{index}",
+                get(mail_pages::attachment),
+            )
+            .route("/mail/ws", get(mail_ws::socket))
+            .route("/admin/domains", get(admin_pages::domains))
+            .route("/admin/domains/{id}", get(admin_pages::domain))
+            .route("/admin/users", get(admin_pages::users))
+            .route("/admin/users/new", get(admin_pages::user_new))
+            .route("/admin/users/{id}", get(admin_pages::user_page))
+            .route("/admin/aliases", get(admin_pages::aliases))
+            .route("/admin/groups", get(admin_pages::groups))
+            .route("/admin/groups/{id}", get(admin_pages::group_page))
+            .route("/admin/quota", get(admin_reports::quota))
+            .route("/admin/quota/data", get(admin_reports::quota_data))
+            .route("/admin/audit", get(admin_reports::audit))
+            .route("/admin/audit.csv", get(admin_reports::audit_csv))
+            .route("/admin/import", get(admin_reports::import_page))
+            .route(
+                "/admin/import/result/{token}",
+                get(admin_reports::import_result),
+            )
+            .route("/admin/health", get(admin_reports::health))
+            .route("/admin/health/data", get(admin_reports::health_table))
             .route("/admin/quarantine", get(quarantine_pages::list))
             .route("/admin/quarantine/{id}", get(quarantine_pages::detail))
             .route("/admin/partials/overview", get(admin_overview_partial)),

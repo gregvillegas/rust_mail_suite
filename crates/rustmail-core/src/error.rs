@@ -16,6 +16,9 @@ pub enum Error {
     #[error("conflict: {0}")]
     Conflict(String),
 
+    /// The signed-in administrator may not do this (wrong role, or another domain).
+    #[error("not allowed: {0}")]
+    Forbidden(String),
     /// Caller-supplied input failed validation.
     #[error("invalid input: {0}")]
     Validation(String),

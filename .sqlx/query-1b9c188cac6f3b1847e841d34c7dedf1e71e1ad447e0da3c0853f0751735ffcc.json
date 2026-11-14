@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT d.name, d.id, d.status::text AS \"status!\", d.max_mailboxes,\n                      (SELECT count(*) FROM users u WHERE u.domain_id = d.id) AS \"users!\"\n               FROM domains d WHERE d.name = ANY($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "status!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "max_mailboxes",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "users!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      true,
+      null
+    ]
+  },
+  "hash": "1b9c188cac6f3b1847e841d34c7dedf1e71e1ad447e0da3c0853f0751735ffcc"
+}

@@ -1,0 +1,59 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("admin-groups") }}{% endblock %}
+{% block admin_content %}
+<h1 class="h3 mb-3">{{ ctx.t("admin-groups") }}</h1>
+<p class="text-body-secondary">{{ ctx.t("admin-groups-intro") }}</p>
+{% if let Some((class, key)) = notice %}
+<div class="alert alert-{{ class }}" role="status">{{ ctx.t(key) }}</div>
+{% endif %}
+{% if rows.is_empty() %}
+<p>{{ ctx.t("admin-groups-empty") }}</p>
+{% else %}
+<div class="table-responsive mb-4">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th scope="col">{{ ctx.t("admin-col-name") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-domain") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-address") }}</th>
+        <th scope="col" class="text-end">{{ ctx.t("admin-col-members") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <th scope="row"><a href="/admin/groups/{{ row.id }}">{{ row.name }}</a></th>
+        <td>{{ row.domain }}</td>
+        <td class="text-break">{{ row.address }}</td>
+        <td class="text-end">{{ row.members }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+<h2 class="h5">{{ ctx.t("admin-group-new") }}</h2>
+<form hx-post="/admin/groups" hx-target="#group-status" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end rm-w-60">
+  <div class="col-md-3">
+    <label for="g-domain" class="form-label">{{ ctx.t("admin-col-domain") }}</label>
+    <select id="g-domain" name="domain_id" class="form-select">
+      {% for o in domains %}<option value="{{ o.value }}">{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="g-name" class="form-label">{{ ctx.t("admin-col-name") }}</label>
+    <input id="g-name" name="name" class="form-control" required maxlength="100" autocomplete="off">
+  </div>
+  <div class="col-md-3">
+    <label for="g-address" class="form-label">{{ ctx.t("admin-col-address") }}</label>
+    <input id="g-address" name="address" class="form-control" maxlength="254" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="g-address-help">
+    <div id="g-address-help" class="form-text">{{ ctx.t("admin-group-address-help") }}</div>
+  </div>
+  <div class="col-md-3">
+    <label for="g-desc" class="form-label">{{ ctx.t("admin-field-description") }}</label>
+    <input id="g-desc" name="description" class="form-control" maxlength="500" autocomplete="off">
+  </div>
+  <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-create") }}</button></div>
+  <div class="col-12" id="group-status" aria-live="polite"></div>
+</form>
+{% endblock %}

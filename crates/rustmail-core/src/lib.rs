@@ -11,6 +11,7 @@
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]
 
+pub mod admin;
 pub mod auth;
 pub mod db;
 pub mod domain;

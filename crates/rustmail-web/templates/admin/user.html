@@ -1,0 +1,106 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ u.email }}{% endblock %}
+{% block admin_content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/admin/users">{{ ctx.t("admin-users") }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ u.email }}</li></ol></nav>
+<h1 class="h3 mb-3 text-break">{{ u.email }} <span class="badge text-bg-{{ u.status_class }} fs-6">{{ ctx.t(u.status_key) }}</span></h1>
+{% if let Some((class, key)) = notice %}
+<div class="alert alert-{{ class }}" role="status">{{ ctx.t(key) }}</div>
+{% endif %}
+<div class="row g-4">
+  <div class="col-lg-6">
+    <dl class="row">
+      <dt class="col-sm-5">{{ ctx.t("admin-col-name") }}</dt><dd class="col-sm-7 text-break">{{ u.name }}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-col-domain") }}</dt><dd class="col-sm-7">{{ u.domain }}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-col-role") }}</dt><dd class="col-sm-7">{{ ctx.t(u.role_key) }}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-field-created") }}</dt><dd class="col-sm-7">{{ u.created }}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-col-last-login") }}</dt><dd class="col-sm-7">{{ u.last_login }}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-col-usage") }}</dt>
+      <dd class="col-sm-7" data-testid="user-usage">{{ u.used }} / {{ u.effective_quota }}{% if let Some(p) = u.percent %} <span class="badge text-bg-{{ u.bar_class }}">{{ p }}%</span>{% endif %}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-field-messages") }}</dt><dd class="col-sm-7">{{ u.messages }}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-field-sessions") }}</dt><dd class="col-sm-7">{{ u.sessions }}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-field-failed-logins") }}</dt><dd class="col-sm-7">{{ u.failed_logins }}{% if !u.locked_until.is_empty() %} · {{ ctx.t_str("admin-locked-until", "time", u.locked_until) }}{% endif %}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-groups") }}</dt>
+      <dd class="col-sm-7">{% if u.groups.is_empty() %}–{% else %}{% for g in u.groups %}<a href="/admin/groups/{{ g.0 }}">{{ g.1 }}</a>{% if !loop.last %}, {% endif %}{% endfor %}{% endif %}</dd>
+      <dt class="col-sm-5">{{ ctx.t("admin-aliases") }}</dt>
+      <dd class="col-sm-7 text-break">{% if u.aliases.is_empty() %}–{% else %}{% for a in u.aliases %}{{ a }}{% if !loop.last %}, {% endif %}{% endfor %}{% endif %}</dd>
+    </dl>
+  </div>
+  {% if can_manage %}
+  <div class="col-lg-6">
+    <h2 class="h5">{{ ctx.t("admin-settings") }}</h2>
+    <form hx-post="/admin/users/{{ u.id }}" hx-target="#save-status" hx-swap="innerHTML" hx-boost="false" class="row g-2 mb-4">
+      <div class="col-12">
+        <label for="e-name" class="form-label">{{ ctx.t("admin-col-name") }}</label>
+        <input id="e-name" name="name" class="form-control" value="{{ u.name }}" maxlength="200" autocomplete="off">
+      </div>
+      <div class="col-md-6">
+        <label for="e-role" class="form-label">{{ ctx.t("admin-col-role") }}</label>
+        {% if can_set_role %}
+        <select id="e-role" name="role" class="form-select">
+          {% for o in role_options %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+        </select>
+        {% else %}
+        <input type="hidden" name="role" value="{{ u.role }}">
+        <input id="e-role" class="form-control" value="{{ ctx.t(u.role_key) }}" disabled>
+        {% endif %}
+      </div>
+      <div class="col-md-6">
+        <label for="e-quota" class="form-label">{{ ctx.t("admin-field-quota-mb") }}</label>
+        <input id="e-quota" name="quota_mb" class="form-control" inputmode="numeric" value="{{ u.quota_mb }}" autocomplete="off" aria-describedby="e-quota-help">
+        <div id="e-quota-help" class="form-text">{{ ctx.t("admin-field-quota-help") }}</div>
+      </div>
+      <div class="col-12"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-save") }}</button></div>
+      <div class="col-12" id="save-status" aria-live="polite"></div>
+    </form>
+
+    {% if !is_self %}
+    <h2 class="h5">{{ ctx.t("admin-col-status") }}</h2>
+    <form hx-post="/admin/users/{{ u.id }}/status" hx-target="#status-status" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end mb-4">
+      <div class="col-md-6">
+        <label for="s-status" class="visually-hidden">{{ ctx.t("admin-col-status") }}</label>
+        <select id="s-status" name="status" class="form-select">
+          {% for o in status_options %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-auto"><button type="submit" class="btn btn-outline-primary">{{ ctx.t("admin-apply") }}</button></div>
+      <div class="col-12" id="status-status" aria-live="polite"></div>
+    </form>
+    {% endif %}
+
+    <h2 class="h5">{{ ctx.t("admin-field-password") }}</h2>
+    <form hx-post="/admin/users/{{ u.id }}/password" hx-target="#password-status" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("admin-confirm-reset-password") }}" class="row g-2 align-items-end mb-4">
+      <div class="col-md-7">
+        <label for="p-password" class="form-label">{{ ctx.t("admin-field-new-password") }}</label>
+        <input id="p-password" name="password" type="password" class="form-control" autocomplete="new-password" aria-describedby="p-password-help">
+        <div id="p-password-help" class="form-text">{{ ctx.t("admin-field-password-help") }}</div>
+      </div>
+      <div class="col-auto"><button type="submit" class="btn btn-outline-primary">{{ ctx.t("admin-reset-password") }}</button></div>
+      <div class="col-12" id="password-status" aria-live="polite"></div>
+    </form>
+
+    <div class="d-flex flex-wrap gap-2 mb-4">
+      <form hx-post="/admin/users/{{ u.id }}/unlock" hx-target="#actions-status" hx-swap="innerHTML" hx-boost="false">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">{{ ctx.t("admin-unlock") }}</button>
+      </form>
+      <form hx-post="/admin/users/{{ u.id }}/sessions" hx-target="#actions-status" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("admin-confirm-signout") }}">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">{{ ctx.t("admin-sign-out-everywhere") }}</button>
+      </form>
+    </div>
+    <div id="actions-status" aria-live="polite" class="mb-4"></div>
+
+    {% if !is_self %}
+    <h2 class="h5 text-danger">{{ ctx.t("admin-danger-zone") }}</h2>
+    <form hx-post="/admin/users/{{ u.id }}/delete" hx-target="#delete-status" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("admin-confirm-delete-user") }}" class="row g-2 align-items-end">
+      <div class="col-12"><p class="small text-body-secondary mb-1">{{ ctx.t("admin-delete-user-help") }}</p></div>
+      <div class="col-md-8">
+        <label for="x-confirm" class="form-label">{{ ctx.t_str("admin-type-to-confirm", "value", u.email) }}</label>
+        <input id="x-confirm" name="confirm" class="form-control" autocomplete="off" required>
+      </div>
+      <div class="col-auto"><button type="submit" class="btn btn-outline-danger">{{ ctx.t("admin-delete") }}</button></div>
+      <div class="col-12" id="delete-status" aria-live="polite"></div>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

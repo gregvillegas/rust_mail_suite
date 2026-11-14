@@ -9,6 +9,7 @@
 //! - `pipeline`: turn the Postfix/Amavis logs into events and quarantine entries.
 //! - `quarantine`: list and purge held messages.
 //! - `policy`: spam and virus thresholds per server, domain or recipient.
+//! - `mail index`: build the webmail search index for a user.
 //!
 //! Web-based user management arrives in Phase 7; until then this is the way to
 //! create accounts.
@@ -18,6 +19,7 @@
 //! Mail is stored under `--vmail-base` / `VMAIL_BASE`; see
 //! `rustmail_core::provisioning` for the permissions model.
 
+mod mail_cmd;
 mod pipeline_cmd;
 
 use std::path::PathBuf;
@@ -79,6 +81,9 @@ enum Command {
     /// Spam and virus policy.
     #[command(subcommand)]
     Policy(pipeline_cmd::PolicyCommand),
+    /// Webmail maintenance.
+    #[command(subcommand)]
+    Mail(mail_cmd::MailCommand),
 }
 
 #[derive(Debug, Subcommand)]
@@ -218,6 +223,7 @@ async fn main() -> Result<()> {
         Command::Pipeline(command) => pipeline_cmd::run_pipeline(&pool, command).await?,
         Command::Quarantine(command) => pipeline_cmd::run_quarantine(&pool, command).await?,
         Command::Policy(command) => pipeline_cmd::run_policy(&pool, command).await?,
+        Command::Mail(command) => mail_cmd::run_mail(&pool, command).await?,
     }
     Ok(())
 }

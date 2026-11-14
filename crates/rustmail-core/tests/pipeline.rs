@@ -486,7 +486,7 @@ async fn listing_filters_and_counts(pool: PgPool) {
         .await
         .unwrap();
     assert_eq!((paged.items.len(), paged.total), (1, 3));
-    let counts = svc.counts().await.unwrap();
+    let counts = svc.counts(None).await.unwrap();
     assert_eq!((counts.virus, counts.spam, counts.other), (1, 2, 0));
 }
 

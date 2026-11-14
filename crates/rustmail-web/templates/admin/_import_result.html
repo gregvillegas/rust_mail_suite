@@ -1,0 +1,19 @@
+<h2 class="h5">{{ ctx.t("admin-import-result-title") }}</h2>
+<p data-testid="import-result-summary">{{ ctx.t_num("admin-import-created-count", "count", created as i64) }} · {{ ctx.t_num("admin-import-failed-count", "count", failed as i64) }}</p>
+{% if let Some(link) = download %}
+<div class="alert alert-warning" role="status">
+  <p class="mb-2">{{ ctx.t("admin-import-download-help") }}</p>
+  <a class="btn btn-primary btn-sm" href="{{ link }}" hx-boost="false" download data-testid="import-download">{{ ctx.t("admin-import-download") }}</a>
+</div>
+{% endif %}
+<div class="table-responsive">
+  <table class="table table-sm">
+    <thead><tr><th scope="col">{{ ctx.t("admin-import-line") }}</th><th scope="col">{{ ctx.t("admin-col-email") }}</th><th scope="col">{{ ctx.t("admin-col-status") }}</th></tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr{% if !r.created %} class="table-danger"{% endif %}><td>{{ r.line }}</td><td class="text-break">{{ r.email }}</td><td>{% if r.created %}{{ ctx.t("admin-import-created") }}{% else %}{{ r.error }}{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<a href="/admin/users">{{ ctx.t("admin-users") }}</a>

@@ -26,7 +26,10 @@ fn config() -> MailConfig {
 }
 
 fn addr(email: &str) -> Address {
-    Address { name: None, email: email.to_owned() }
+    Address {
+        name: None,
+        email: email.to_owned(),
+    }
 }
 
 fn message(from: &str, to: &str, subject: &str, body: &str) -> Vec<u8> {
@@ -53,14 +56,21 @@ async fn wait_for_subject(config: &MailConfig, user: &str, subject: &str) -> u32
 async fn folders_messages_flags_moves_and_deletes() {
     let cfg = config();
     let user = env("MAIL_LIVE_USER");
-    let mut s = MailSession::connect(&cfg, &user).await.expect("connect as the user");
+    let mut s = MailSession::connect(&cfg, &user)
+        .await
+        .expect("connect as the user");
     assert_eq!(s.delimiter(), "/");
 
     // The standard folders exist, in a stable order, with roles.
     let folders = s.folders().await.unwrap();
     assert_eq!(folders[0].name, "INBOX");
     for role in ["Drafts", "Sent", "Trash", "Junk"] {
-        assert!(folders.iter().any(|f| f.name == role && f.special.is_some()), "{role}");
+        assert!(
+            folders
+                .iter()
+                .any(|f| f.name == role && f.special.is_some()),
+            "{role}"
+        );
     }
 
     // Folder names with spaces, an ampersand and non-ASCII characters survive the
@@ -73,11 +83,19 @@ async fn folders_messages_flags_moves_and_deletes() {
     }
     let name = format!("Tëst & Ünicode {}", std::process::id());
     s.create_folder(&name).await.unwrap();
-    assert!(s.create_folder(&name).await.is_err(), "creating twice is refused");
+    assert!(
+        s.create_folder(&name).await.is_err(),
+        "creating twice is refused"
+    );
     assert!(s.folders().await.unwrap().iter().any(|f| f.name == name));
 
     // Store, read back, flag.
-    let raw = message("sender@example.org", &user, "stored directly", "Grüße aus dem Test");
+    let raw = message(
+        "sender@example.org",
+        &user,
+        "stored directly",
+        "Grüße aus dem Test",
+    );
     s.append(&name, Flags::default(), &raw).await.unwrap();
     let page = s.list(&name, 1, 25).await.unwrap();
     assert_eq!(page.total, 1);
@@ -86,16 +104,32 @@ async fn folders_messages_flags_moves_and_deletes() {
     assert!(!item.flags.seen);
 
     let opened = s.message(&name, item.uid, true).await.unwrap();
-    assert_eq!(parse(&opened.bytes).unwrap().text.trim(), "Grüße aus dem Test");
-    assert!(s.list(&name, 1, 25).await.unwrap().items[0].flags.seen, "opening marks it read");
-    s.set_flag(&name, item.uid, FlagKind::Seen, false).await.unwrap();
-    s.set_flag(&name, item.uid, FlagKind::Flagged, true).await.unwrap();
+    assert_eq!(
+        parse(&opened.bytes).unwrap().text.trim(),
+        "Grüße aus dem Test"
+    );
+    assert!(
+        s.list(&name, 1, 25).await.unwrap().items[0].flags.seen,
+        "opening marks it read"
+    );
+    s.set_flag(&name, item.uid, FlagKind::Seen, false)
+        .await
+        .unwrap();
+    s.set_flag(&name, item.uid, FlagKind::Flagged, true)
+        .await
+        .unwrap();
     let flags = s.list(&name, 1, 25).await.unwrap().items[0].flags;
     assert!(!flags.seen && flags.flagged);
 
     // A message that is not there is "not found", not a crash.
-    assert!(matches!(s.message(&name, 999_999, false).await, Err(MailError::NotFound)));
-    assert!(matches!(s.list("No/Such/Folder", 1, 10).await, Err(MailError::NotFound)));
+    assert!(matches!(
+        s.message(&name, 999_999, false).await,
+        Err(MailError::NotFound)
+    ));
+    assert!(matches!(
+        s.list("No/Such/Folder", 1, 10).await,
+        Err(MailError::NotFound)
+    ));
 
     // Move it, then delete it: first to Trash, then for good.
     let target = format!("{name}/Child");
@@ -107,19 +141,33 @@ async fn folders_messages_flags_moves_and_deletes() {
     let removed_for_good = s.delete_message(&target, moved.items[0].uid).await.unwrap();
     assert!(!removed_for_good, "first delete goes to the Trash");
     let trash = s.list("Trash", 1, 50).await.unwrap();
-    let in_trash = trash.items.iter().find(|m| m.subject == "stored directly").expect("in Trash");
-    assert!(s.delete_message("Trash", in_trash.uid).await.unwrap(), "deleting from Trash is final");
+    let in_trash = trash
+        .items
+        .iter()
+        .find(|m| m.subject == "stored directly")
+        .expect("in Trash");
+    assert!(
+        s.delete_message("Trash", in_trash.uid).await.unwrap(),
+        "deleting from Trash is final"
+    );
 
     // Folder management, and the protections.
     let renamed = format!("{name} renamed");
     s.rename_folder(&name, &renamed).await.unwrap();
     assert!(s.folders().await.unwrap().iter().any(|f| f.name == renamed));
-    assert!(s.rename_folder("Sent", "Elsewhere").await.is_err(), "standard folders are protected");
+    assert!(
+        s.rename_folder("Sent", "Elsewhere").await.is_err(),
+        "standard folders are protected"
+    );
     assert!(s.delete_folder("INBOX").await.is_err());
     assert!(s.delete_folder("Trash").await.is_err());
     s.delete_folder(&renamed).await.unwrap();
     assert!(
-        !s.folders().await.unwrap().iter().any(|f| f.name.starts_with(&name)),
+        !s.folders()
+            .await
+            .unwrap()
+            .iter()
+            .any(|f| f.name.starts_with(&name)),
         "the folder and its subfolder are both gone"
     );
     s.close().await;
@@ -131,10 +179,18 @@ async fn the_master_login_refuses_wrong_credentials_and_unknown_users() {
     let cfg = config();
     let mut wrong = cfg.clone();
     wrong.master_password = "not-the-password".into();
-    assert!(matches!(MailSession::connect(&wrong, &env("MAIL_LIVE_USER")).await, Err(MailError::Auth)));
-    assert!(MailSession::connect(&cfg, "nobody-here@example.invalid").await.is_err());
+    assert!(matches!(
+        MailSession::connect(&wrong, &env("MAIL_LIVE_USER")).await,
+        Err(MailError::Auth)
+    ));
+    assert!(MailSession::connect(&cfg, "nobody-here@example.invalid")
+        .await
+        .is_err());
     // Master syntax in the user name is refused before anything is sent.
-    assert!(matches!(MailSession::connect(&cfg, "a@b.co*webmail").await, Err(MailError::Invalid(_))));
+    assert!(matches!(
+        MailSession::connect(&cfg, "a@b.co*webmail").await,
+        Err(MailError::Invalid(_))
+    ));
 }
 
 #[tokio::test]
@@ -146,7 +202,10 @@ async fn sending_delivers_with_attachments_and_keeps_a_copy_in_sent() {
     let subject = format!("live send {}", std::process::id());
 
     let draft = Draft {
-        from: Address { name: Some("Live Tester".into()), email: user.clone() },
+        from: Address {
+            name: Some("Live Tester".into()),
+            email: user.clone(),
+        },
         to: vec![addr(&peer)],
         cc: vec![],
         bcc: vec![],
@@ -161,12 +220,29 @@ async fn sending_delivers_with_attachments_and_keeps_a_copy_in_sent() {
         }],
     };
     let built = build(&draft, &cfg.helo_name).unwrap();
-    submit::send(&cfg, &user, &user, &built).await.expect("submission accepted");
+    submit::send(&cfg, &user, &user, &built)
+        .await
+        .expect("submission accepted");
 
     // Keep a copy, as the web UI does.
     let mut s = MailSession::connect(&cfg, &user).await.unwrap();
-    s.append("Sent", Flags { seen: true, ..Flags::default() }, &built.bytes).await.unwrap();
-    assert!(s.list("Sent", 1, 50).await.unwrap().items.iter().any(|m| m.subject == subject));
+    s.append(
+        "Sent",
+        Flags {
+            seen: true,
+            ..Flags::default()
+        },
+        &built.bytes,
+    )
+    .await
+    .unwrap();
+    assert!(s
+        .list("Sent", 1, 50)
+        .await
+        .unwrap()
+        .items
+        .iter()
+        .any(|m| m.subject == subject));
     s.close().await;
 
     // The recipient gets it (through Postfix, Amavis and Dovecot).
@@ -211,7 +287,10 @@ async fn idle_notices_new_mail() {
     let watcher = MailSession::connect(&cfg, &user).await.unwrap();
 
     // Quiet first: nothing happens, and the wait returns on its own.
-    let (watcher, change) = watcher.wait_for_change("INBOX", Duration::from_secs(2)).await.unwrap();
+    let (watcher, change) = watcher
+        .wait_for_change("INBOX", Duration::from_secs(2))
+        .await
+        .unwrap();
     assert_eq!(change, Change::Quiet);
 
     // Then deliver something from another session while the first one waits.
@@ -221,12 +300,19 @@ async fn idle_notices_new_mail() {
         tokio::time::sleep(Duration::from_secs(1)).await;
         let mut other = MailSession::connect(&cfg2, &user2).await.unwrap();
         other
-            .append("INBOX", Flags::default(), &message("x@example.org", &user2, "idle wake-up", "hi"))
+            .append(
+                "INBOX",
+                Flags::default(),
+                &message("x@example.org", &user2, "idle wake-up", "hi"),
+            )
             .await
             .unwrap();
         other.close().await;
     });
-    let (watcher, change) = watcher.wait_for_change("INBOX", Duration::from_secs(20)).await.unwrap();
+    let (watcher, change) = watcher
+        .wait_for_change("INBOX", Duration::from_secs(20))
+        .await
+        .unwrap();
     delivery.await.unwrap();
     assert_eq!(change, Change::Activity);
     watcher.close().await;

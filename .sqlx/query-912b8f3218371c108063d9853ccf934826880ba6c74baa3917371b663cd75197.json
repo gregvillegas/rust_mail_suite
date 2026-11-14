@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM messages_meta WHERE mailbox_id = $1 AND folder = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "912b8f3218371c108063d9853ccf934826880ba6c74baa3917371b663cd75197"
+}

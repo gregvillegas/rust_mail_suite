@@ -1,0 +1,89 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("admin-aliases") }}{% endblock %}
+{% block admin_content %}
+<h1 class="h3 mb-3">{{ ctx.t("admin-aliases") }}</h1>
+<p class="text-body-secondary">{{ ctx.t("admin-aliases-intro") }}</p>
+{% if let Some((class, key)) = notice %}
+<div class="alert alert-{{ class }}" role="status">{{ ctx.t(key) }}</div>
+{% endif %}
+<form method="get" action="/admin/aliases" class="row g-2 align-items-end mb-3">
+  <div class="col-sm-5 col-md-3">
+    <label for="a-domain" class="form-label">{{ ctx.t("admin-col-domain") }}</label>
+    <select id="a-domain" name="domain" class="form-select">
+      {% for o in domain_options %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-5 col-md-4">
+    <label for="a-search" class="form-label">{{ ctx.t("admin-filter-search") }}</label>
+    <input id="a-search" name="q" type="search" class="form-control" value="{{ search }}" maxlength="200" autocomplete="off">
+  </div>
+  <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-filter-apply") }}</button></div>
+</form>
+<p class="small text-body-secondary mb-2">{{ ctx.t_num("admin-total", "count", total) }}</p>
+{% if rows.is_empty() %}
+<p>{{ ctx.t("admin-aliases-empty") }}</p>
+{% else %}
+<div class="table-responsive mb-3">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th scope="col">{{ ctx.t("admin-col-alias") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-destination") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-status") }}</th>
+        <th scope="col"><span class="visually-hidden">{{ ctx.t("admin-col-actions") }}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <th scope="row" class="text-break">{{ row.address }}</th>
+        <td class="text-break">{{ row.destination }}</td>
+        <td>{% if row.enabled %}<span class="badge text-bg-success">{{ ctx.t("admin-enabled") }}</span>{% else %}<span class="badge text-bg-secondary">{{ ctx.t("admin-disabled") }}</span>{% endif %}</td>
+        <td class="text-end text-nowrap">
+          <form class="d-inline" hx-post="/admin/aliases/{{ row.id }}/toggle" hx-swap="none" hx-boost="false">
+            <input type="hidden" name="status" value="{% if row.enabled %}disable{% else %}enable{% endif %}">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">{% if row.enabled %}{{ ctx.t("admin-disable") }}{% else %}{{ ctx.t("admin-enable") }}{% endif %}<span class="visually-hidden"> {{ row.address }}</span></button>
+          </form>
+          <form class="d-inline" hx-post="/admin/aliases/{{ row.id }}/delete" hx-swap="none" hx-boost="false" hx-confirm="{{ ctx.t("admin-confirm-delete-alias") }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm">{{ ctx.t("admin-delete") }}<span class="visually-hidden"> {{ row.address }}</span></button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if prev_url.is_some() || next_url.is_some() %}
+<nav aria-label="{{ ctx.t("quarantine-pagination") }}">
+  <ul class="pagination">
+    <li class="page-item{% if prev_url.is_none() %} disabled{% endif %}">
+      {% if let Some(url) = prev_url %}<a class="page-link" href="{{ url }}">{{ ctx.t("quarantine-prev") }}</a>{% else %}<span class="page-link">{{ ctx.t("quarantine-prev") }}</span>{% endif %}
+    </li>
+    <li class="page-item active" aria-current="page"><span class="page-link">{{ ctx.t_num("quarantine-page", "page", page) }}</span></li>
+    <li class="page-item{% if next_url.is_none() %} disabled{% endif %}">
+      {% if let Some(url) = next_url %}<a class="page-link" href="{{ url }}">{{ ctx.t("quarantine-next") }}</a>{% else %}<span class="page-link">{{ ctx.t("quarantine-next") }}</span>{% endif %}
+    </li>
+  </ul>
+</nav>
+{% endif %}
+{% endif %}
+<h2 class="h5 mt-4">{{ ctx.t("admin-alias-new") }}</h2>
+<form hx-post="/admin/aliases" hx-target="#alias-status" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end rm-w-60">
+  <div class="col-md-3">
+    <label for="na-domain" class="form-label">{{ ctx.t("admin-col-domain") }}</label>
+    <select id="na-domain" name="domain_id" class="form-select">
+      {% for o in create_domains %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label for="na-address" class="form-label">{{ ctx.t("admin-col-alias") }}</label>
+    <input id="na-address" name="address" class="form-control" required maxlength="254" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="info@example.org">
+  </div>
+  <div class="col-md-4">
+    <label for="na-dest" class="form-label">{{ ctx.t("admin-col-destination") }}</label>
+    <input id="na-dest" name="destination" class="form-control" required maxlength="254" autocomplete="off" autocapitalize="none" spellcheck="false">
+  </div>
+  <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-create") }}</button></div>
+  <div class="col-12" id="alias-status" aria-live="polite"></div>
+</form>
+{% endblock %}

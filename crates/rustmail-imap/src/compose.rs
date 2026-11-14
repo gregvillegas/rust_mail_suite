@@ -112,7 +112,9 @@ pub fn parse_recipients(input: &str) -> MailResult<Vec<Address>> {
         return Ok(Vec::new());
     }
     if input.chars().any(|c| c.is_control()) {
-        return Err(MailError::Invalid("an address contains a control character".into()));
+        return Err(MailError::Invalid(
+            "an address contains a control character".into(),
+        ));
     }
     if input.len() > MAX_ADDRESS_FIELD {
         return Err(MailError::Invalid("the address list is too long".into()));
@@ -125,7 +127,9 @@ pub fn parse_recipients(input: &str) -> MailResult<Vec<Address>> {
                 list.mailboxes()
                     .map(|mb| {
                         (
-                            mb.name().map(str::to_owned).filter(|n| !n.trim().is_empty()),
+                            mb.name()
+                                .map(str::to_owned)
+                                .filter(|n| !n.trim().is_empty()),
                             mb.address().map(|a| a.trim().to_owned()),
                         )
                     })
@@ -134,13 +138,19 @@ pub fn parse_recipients(input: &str) -> MailResult<Vec<Address>> {
         })
         .unwrap_or_default();
     if parsed.is_empty() {
-        return Err(MailError::Invalid(format!("\"{}\" is not an e-mail address", shorten(input))));
+        return Err(MailError::Invalid(format!(
+            "\"{}\" is not an e-mail address",
+            shorten(input)
+        )));
     }
     let mut out = Vec::with_capacity(parsed.len());
     for (name, email) in parsed {
         let email = email.unwrap_or_default();
         if !is_valid_email(&email) {
-            return Err(MailError::Invalid(format!("\"{}\" is not a valid e-mail address", shorten(&email))));
+            return Err(MailError::Invalid(format!(
+                "\"{}\" is not a valid e-mail address",
+                shorten(&email)
+            )));
         }
         out.push(Address { name, email });
     }
@@ -179,7 +189,10 @@ pub fn build(draft: &Draft, helo_name: &str) -> MailResult<BuiltMessage> {
     let mut recipients: Vec<String> = Vec::new();
     for a in draft.to.iter().chain(&draft.cc).chain(&draft.bcc) {
         if !is_valid_email(&a.email) {
-            return Err(MailError::Invalid(format!("\"{}\" is not a valid e-mail address", shorten(&a.email))));
+            return Err(MailError::Invalid(format!(
+                "\"{}\" is not a valid e-mail address",
+                shorten(&a.email)
+            )));
         }
         let lower = a.email.to_lowercase();
         if !recipients.contains(&lower) {
@@ -187,10 +200,18 @@ pub fn build(draft: &Draft, helo_name: &str) -> MailResult<BuiltMessage> {
         }
     }
     if recipients.len() > MAX_RECIPIENTS {
-        return Err(MailError::Invalid(format!("at most {MAX_RECIPIENTS} recipients are allowed")));
+        return Err(MailError::Invalid(format!(
+            "at most {MAX_RECIPIENTS} recipients are allowed"
+        )));
     }
-    if draft.subject.chars().any(|c| c == '\r' || c == '\n' || c == '\0') {
-        return Err(MailError::Invalid("the subject must be a single line".into()));
+    if draft
+        .subject
+        .chars()
+        .any(|c| c == '\r' || c == '\n' || c == '\0')
+    {
+        return Err(MailError::Invalid(
+            "the subject must be a single line".into(),
+        ));
     }
     if draft.subject.chars().count() > MAX_SUBJECT_CHARS {
         return Err(MailError::Invalid("the subject is too long".into()));
@@ -199,7 +220,9 @@ pub fn build(draft: &Draft, helo_name: &str) -> MailResult<BuiltMessage> {
         return Err(MailError::TooLarge("the message text is too long".into()));
     }
     if draft.attachments.len() > MAX_ATTACHMENTS {
-        return Err(MailError::Invalid(format!("at most {MAX_ATTACHMENTS} attachments are allowed")));
+        return Err(MailError::Invalid(format!(
+            "at most {MAX_ATTACHMENTS} attachments are allowed"
+        )));
     }
     let total: usize = draft.attachments.iter().map(|a| a.data.len()).sum();
     if total > MAX_ATTACHMENT_BYTES {
@@ -227,7 +250,12 @@ pub fn build(draft: &Draft, helo_name: &str) -> MailResult<BuiltMessage> {
     if !draft.cc.is_empty() {
         builder = builder.cc(draft.cc.iter().map(to_builder).collect::<Vec<_>>());
     }
-    if let Some(parent) = draft.in_reply_to.as_deref().map(clean_id).filter(|p| !p.is_empty()) {
+    if let Some(parent) = draft
+        .in_reply_to
+        .as_deref()
+        .map(clean_id)
+        .filter(|p| !p.is_empty())
+    {
         builder = builder.in_reply_to(parent);
     }
     let references: Vec<String> = draft
@@ -259,7 +287,12 @@ pub fn build(draft: &Draft, helo_name: &str) -> MailResult<BuiltMessage> {
 /// A `Message-ID` value without angle brackets, or empty if it is unusable.
 fn clean_id(id: &str) -> String {
     let id = id.trim().trim_start_matches('<').trim_end_matches('>');
-    if id.is_empty() || id.len() > 300 || id.chars().any(|c| c.is_control() || c.is_whitespace() || c == '<' || c == '>') {
+    if id.is_empty()
+        || id.len() > 300
+        || id
+            .chars()
+            .any(|c| c.is_control() || c.is_whitespace() || c == '<' || c == '>')
+    {
         String::new()
     } else {
         id.to_owned()
@@ -295,7 +328,13 @@ pub fn quote_for_reply(attribution: &str, text: &str) -> String {
         .replace("\r\n", "\n")
         .lines()
         .take(500)
-        .map(|l| if l.is_empty() { ">\n".to_owned() } else { format!("> {l}\n") })
+        .map(|l| {
+            if l.is_empty() {
+                ">\n".to_owned()
+            } else {
+                format!("> {l}\n")
+            }
+        })
         .collect();
     format!("\n\n{attribution}\n{quoted}")
 }
@@ -311,7 +350,12 @@ pub fn forward_body(from: &str, to: &str, date: &str, subject: &str, text: &str)
 
 /// The recipients of a reply-all: everyone but the user, without duplicates.
 #[must_use]
-pub fn reply_all_recipients(sender: &Address, to: &[Address], cc: &[Address], me: &str) -> (Vec<Address>, Vec<Address>) {
+pub fn reply_all_recipients(
+    sender: &Address,
+    to: &[Address],
+    cc: &[Address],
+    me: &str,
+) -> (Vec<Address>, Vec<Address>) {
     let me = me.to_lowercase();
     let mut seen = vec![me.clone(), sender.email.to_lowercase()];
     let mut keep = |list: &[Address]| -> Vec<Address> {
@@ -339,7 +383,10 @@ mod tests {
     use crate::message::parse;
 
     fn addr(name: Option<&str>, email: &str) -> Address {
-        Address { name: name.map(str::to_owned), email: email.to_owned() }
+        Address {
+            name: name.map(str::to_owned),
+            email: email.to_owned(),
+        }
     }
 
     fn draft() -> Draft {
@@ -358,12 +405,31 @@ mod tests {
 
     #[test]
     fn email_validation() {
-        for ok in ["a@b.co", "first.last@sub.example.com", "o'brien+tag@example.org", "x_y@a-b.example"] {
+        for ok in [
+            "a@b.co",
+            "first.last@sub.example.com",
+            "o'brien+tag@example.org",
+            "x_y@a-b.example",
+        ] {
             assert!(is_valid_email(ok), "{ok}");
         }
         for bad in [
-            "", "a", "a@", "@b.co", "a@b", "a@@b.co", "a b@c.de", "a@b..co", "a@-b.co", ".a@b.co", "a.@b.co",
-            "a..b@c.de", "a@b.c\r\nBcc: x@y.z", "<a@b.co>", "a@b.co>", "\"a b\"@c.de",
+            "",
+            "a",
+            "a@",
+            "@b.co",
+            "a@b",
+            "a@@b.co",
+            "a b@c.de",
+            "a@b..co",
+            "a@-b.co",
+            ".a@b.co",
+            "a.@b.co",
+            "a..b@c.de",
+            "a@b.c\r\nBcc: x@y.z",
+            "<a@b.co>",
+            "a@b.co>",
+            "\"a b\"@c.de",
         ] {
             assert!(!is_valid_email(bad), "{bad:?}");
         }
@@ -390,7 +456,10 @@ mod tests {
         ] {
             assert!(parse_recipients(bad).is_err(), "{bad:?}");
         }
-        assert!(parse_recipients(&"a@b.co,".repeat(1000)).is_err(), "overlong lists are refused");
+        assert!(
+            parse_recipients(&"a@b.co,".repeat(1000)).is_err(),
+            "overlong lists are refused"
+        );
     }
 
     #[test]
@@ -401,9 +470,15 @@ mod tests {
         d.subject = "Grüße & more".into();
         d.body = "Line one\nLine two — with a dash\n".into();
         let built = build(&d, "rustmail.local").unwrap();
-        assert_eq!(built.recipients, ["bob@example.org", "carol@example.org", "secret@example.net"]);
+        assert_eq!(
+            built.recipients,
+            ["bob@example.org", "carol@example.org", "secret@example.net"]
+        );
         let text = String::from_utf8_lossy(&built.bytes).into_owned();
-        assert!(!text.to_lowercase().contains("secret@example.net"), "Bcc must not appear in the message");
+        assert!(
+            !text.to_lowercase().contains("secret@example.net"),
+            "Bcc must not appear in the message"
+        );
         assert!(!text.to_lowercase().contains("\nbcc:"));
         let back = parse(&built.bytes).unwrap();
         assert_eq!(back.subject, "Grüße & more");
@@ -437,7 +512,10 @@ mod tests {
         let back = parse(&built.bytes).unwrap();
         assert_eq!(back.attachments.len(), 1);
         assert_eq!(back.attachments[0].filename, "report.pdf");
-        assert_eq!(crate::message::attachment(&built.bytes, 0).unwrap().data, b"%PDF-1.4 test");
+        assert_eq!(
+            crate::message::attachment(&built.bytes, 0).unwrap().data,
+            b"%PDF-1.4 test"
+        );
     }
 
     #[test]
@@ -451,7 +529,9 @@ mod tests {
         assert!(build(&d, "h").is_err(), "line break in subject");
 
         let mut d = draft();
-        d.to = (0..=MAX_RECIPIENTS).map(|i| addr(None, &format!("u{i}@example.org"))).collect();
+        d.to = (0..=MAX_RECIPIENTS)
+            .map(|i| addr(None, &format!("u{i}@example.org")))
+            .collect();
         assert!(build(&d, "h").is_err(), "too many recipients");
 
         let mut d = draft();
@@ -475,7 +555,10 @@ mod tests {
     fn duplicate_recipients_are_sent_once() {
         let mut d = draft();
         d.cc = vec![addr(None, "BOB@example.org")];
-        assert_eq!(build(&d, "h.local").unwrap().recipients, ["bob@example.org"]);
+        assert_eq!(
+            build(&d, "h.local").unwrap().recipients,
+            ["bob@example.org"]
+        );
     }
 
     #[test]
@@ -493,16 +576,35 @@ mod tests {
         let q = quote_for_reply("On Monday, Bob wrote:", "one\n\ntwo\r\nthree");
         assert_eq!(q, "\n\nOn Monday, Bob wrote:\n> one\n>\n> two\n> three\n");
         let long = "x\n".repeat(2000);
-        assert_eq!(quote_for_reply("a", &long).lines().filter(|l| l.starts_with("> ")).count(), 500);
+        assert_eq!(
+            quote_for_reply("a", &long)
+                .lines()
+                .filter(|l| l.starts_with("> "))
+                .count(),
+            500
+        );
     }
 
     #[test]
     fn reply_all_excludes_me_and_duplicates() {
         let sender = addr(None, "bob@example.org");
-        let to = vec![addr(None, "alice@example.com"), addr(None, "carol@example.org")];
-        let cc = vec![addr(None, "CAROL@example.org"), addr(None, "dan@example.org"), addr(None, "bob@example.org")];
+        let to = vec![
+            addr(None, "alice@example.com"),
+            addr(None, "carol@example.org"),
+        ];
+        let cc = vec![
+            addr(None, "CAROL@example.org"),
+            addr(None, "dan@example.org"),
+            addr(None, "bob@example.org"),
+        ];
         let (to_out, cc_out) = reply_all_recipients(&sender, &to, &cc, "Alice@Example.com");
-        assert_eq!(to_out.iter().map(|a| a.email.as_str()).collect::<Vec<_>>(), ["carol@example.org"]);
-        assert_eq!(cc_out.iter().map(|a| a.email.as_str()).collect::<Vec<_>>(), ["dan@example.org"]);
+        assert_eq!(
+            to_out.iter().map(|a| a.email.as_str()).collect::<Vec<_>>(),
+            ["carol@example.org"]
+        );
+        assert_eq!(
+            cc_out.iter().map(|a| a.email.as_str()).collect::<Vec<_>>(),
+            ["dan@example.org"]
+        );
     }
 }

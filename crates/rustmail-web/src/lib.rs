@@ -12,11 +12,18 @@
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]
 
+mod admin_common;
+mod admin_health;
+mod admin_pages;
+mod admin_reports;
 pub mod app;
 pub mod assets;
 pub mod auth;
 pub mod config;
 pub mod i18n;
+pub mod mail;
+mod mail_pages;
+mod mail_ws;
 pub mod pages;
 mod quarantine_pages;
 pub mod ui;

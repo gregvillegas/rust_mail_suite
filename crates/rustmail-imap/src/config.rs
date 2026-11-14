@@ -50,8 +50,14 @@ pub struct MailConfig {
 impl fmt::Debug for MailConfig {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("MailConfig")
-            .field("imap", &format_args!("{}:{}", self.imap_host, self.imap_port))
-            .field("smtp", &format_args!("{}:{}", self.smtp_host, self.smtp_port))
+            .field(
+                "imap",
+                &format_args!("{}:{}", self.imap_host, self.imap_port),
+            )
+            .field(
+                "smtp",
+                &format_args!("{}:{}", self.smtp_host, self.smtp_port),
+            )
             .field("tls", &self.tls)
             .field("master_user", &self.master_user)
             .field("master_password", &"<hidden>")
@@ -123,7 +129,8 @@ impl MailConfig {
     /// [`MailError::Config`] if the master user or password contain characters
     /// that are special in IMAP or SASL (`*`, NUL, line breaks) or are empty.
     pub fn validate(&self) -> MailResult<()> {
-        let bad = |s: &str| s.is_empty() || s.chars().any(|c| c == '*' || c == '\0' || c.is_control());
+        let bad =
+            |s: &str| s.is_empty() || s.chars().any(|c| c == '*' || c == '\0' || c.is_control());
         if bad(&self.master_user) || bad(&self.master_password) {
             return Err(MailError::Config(
                 "the master user and password must not be empty or contain '*' or control characters".into(),
@@ -135,7 +142,9 @@ impl MailConfig {
                 .chars()
                 .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-')
         {
-            return Err(MailError::Config("MAIL_HELO_NAME is not a valid host name".into()));
+            return Err(MailError::Config(
+                "MAIL_HELO_NAME is not a valid host name".into(),
+            ));
         }
         Ok(())
     }
@@ -179,7 +188,10 @@ mod tests {
 
     #[test]
     fn the_master_login_has_the_documented_shape() {
-        assert_eq!(config().imap_login_for("alice@example.com").unwrap(), "alice@example.com*webmail");
+        assert_eq!(
+            config().imap_login_for("alice@example.com").unwrap(),
+            "alice@example.com*webmail"
+        );
     }
 
     #[test]
@@ -191,7 +203,12 @@ mod tests {
 
     #[test]
     fn unsafe_master_credentials_are_refused() {
-        for (user, password) in [("we*bmail", "x"), ("webmail", ""), ("", "x"), ("webmail", "a\nb")] {
+        for (user, password) in [
+            ("we*bmail", "x"),
+            ("webmail", ""),
+            ("", "x"),
+            ("webmail", "a\nb"),
+        ] {
             let mut c = config();
             c.master_user = user.into();
             c.master_password = password.into();

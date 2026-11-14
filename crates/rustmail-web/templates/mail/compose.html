@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.t(c.heading_key) }}{% endblock %}
+{% block content %}
+<div class="container py-3" x-data="composeForm">
+  <h1 class="h4 mb-3">{{ ctx.t(c.heading_key) }}</h1>
+  <form id="compose-form" hx-post="/mail/send" hx-encoding="multipart/form-data" hx-target="#compose-status" hx-swap="innerHTML" hx-boost="false"
+        hx-disabled-elt="#compose-send" class="vstack gap-3">
+    <input type="hidden" name="in_reply_to" value="{{ c.in_reply_to }}">
+    <input type="hidden" name="references" value="{{ c.references }}">
+    <input type="hidden" name="answered_folder" value="{{ c.answered_folder }}">
+    <input type="hidden" name="answered_uid" value="{{ c.answered_uid }}">
+    <div class="row g-2 align-items-center">
+      <label class="col-sm-2 col-form-label" for="c-from">{{ ctx.t("mail-from") }}</label>
+      <div class="col-sm-10"><input id="c-from" class="form-control-plaintext" type="text" value="{{ c.from }}" readonly></div>
+    </div>
+    <div class="row g-2 align-items-center">
+      <label class="col-sm-2 col-form-label" for="c-to">{{ ctx.t("mail-to") }}</label>
+      <div class="col-sm-10">
+        <input id="c-to" class="form-control" type="text" name="to" value="{{ c.to }}" maxlength="4000" autocomplete="off" required aria-describedby="c-to-help">
+        <div id="c-to-help" class="form-text">{{ ctx.t("mail-to-help") }}</div>
+      </div>
+    </div>
+    <div class="row g-2 align-items-center"{% if !c.show_cc %} data-collapsible hidden{% endif %} id="c-cc-row">
+      <label class="col-sm-2 col-form-label" for="c-cc">{{ ctx.t("mail-cc") }}</label>
+      <div class="col-sm-10"><input id="c-cc" class="form-control" type="text" name="cc" value="{{ c.cc }}" maxlength="4000" autocomplete="off"></div>
+    </div>
+    <div class="row g-2 align-items-center" id="c-bcc-row" hidden>
+      <label class="col-sm-2 col-form-label" for="c-bcc">{{ ctx.t("mail-bcc") }}</label>
+      <div class="col-sm-10"><input id="c-bcc" class="form-control" type="text" name="bcc" value="{{ c.bcc }}" maxlength="4000" autocomplete="off"></div>
+    </div>
+    <div class="row g-2">
+      <div class="col-sm-10 offset-sm-2">
+        <button type="button" class="btn btn-link btn-sm p-0 me-3" @click="showCc">{{ ctx.t("mail-add-cc") }}</button>
+        <button type="button" class="btn btn-link btn-sm p-0" @click="showBcc">{{ ctx.t("mail-add-bcc") }}</button>
+      </div>
+    </div>
+    <div class="row g-2 align-items-center">
+      <label class="col-sm-2 col-form-label" for="c-subject">{{ ctx.t("mail-subject") }}</label>
+      <div class="col-sm-10"><input id="c-subject" class="form-control" type="text" name="subject" value="{{ c.subject }}" maxlength="500" autocomplete="off"></div>
+    </div>
+    <div class="row g-2">
+      <label class="col-sm-2 col-form-label" for="c-body">{{ ctx.t("mail-body") }}</label>
+      <div class="col-sm-10"><textarea id="c-body" class="form-control rm-compose-body" name="body" rows="16">{{ c.body }}</textarea></div>
+    </div>
+    <div class="row g-2">
+      <label class="col-sm-2 col-form-label" for="c-files">{{ ctx.t("mail-attachments") }}</label>
+      <div class="col-sm-10">
+        <input id="c-files" class="form-control" type="file" name="attachments" multiple aria-describedby="c-files-help">
+        <div id="c-files-help" class="form-text">{{ ctx.t("mail-attachments-help") }}</div>
+      </div>
+    </div>
+    <div class="row g-2">
+      <div class="col-sm-10 offset-sm-2 d-flex flex-wrap gap-2 align-items-center">
+        <button id="compose-send" type="submit" class="btn btn-primary">{{ ctx.t("mail-send") }}</button>
+        <a class="btn btn-outline-secondary" href="/mail">{{ ctx.t("mail-cancel") }}</a>
+        <div id="compose-status" class="flex-grow-1" role="status" aria-live="polite"></div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

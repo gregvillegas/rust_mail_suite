@@ -1,0 +1,48 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ d.name }}{% endblock %}
+{% block admin_content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/admin/domains">{{ ctx.t("admin-domains") }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ d.name }}</li></ol></nav>
+<h1 class="h3 mb-3">{{ d.name }} <span class="badge text-bg-{{ d.status_class }} fs-6">{{ ctx.t(d.status_key) }}</span></h1>
+{% if let Some((class, key)) = notice %}
+<div class="alert alert-{{ class }}" role="status">{{ ctx.t(key) }}</div>
+{% endif %}
+<dl class="row rm-w-40">
+  <dt class="col-sm-5">{{ ctx.t("admin-col-users") }}</dt><dd class="col-sm-7"><a href="/admin/users?domain={{ d.id }}">{{ d.users }}</a></dd>
+  <dt class="col-sm-5">{{ ctx.t("admin-col-aliases") }}</dt><dd class="col-sm-7">{{ d.aliases }}</dd>
+  <dt class="col-sm-5">{{ ctx.t("admin-col-groups") }}</dt><dd class="col-sm-7">{{ d.groups }}</dd>
+  <dt class="col-sm-5">{{ ctx.t("admin-col-used") }}</dt><dd class="col-sm-7">{{ d.used }}</dd>
+  <dt class="col-sm-5">{{ ctx.t("admin-col-default-quota") }}</dt><dd class="col-sm-7">{{ d.quota }}</dd>
+  <dt class="col-sm-5">{{ ctx.t("admin-col-max-mailboxes") }}</dt><dd class="col-sm-7">{{ d.max }}</dd>
+</dl>
+{% if can_edit %}
+<h2 class="h5">{{ ctx.t("admin-settings") }}</h2>
+<form hx-post="/admin/domains/{{ d.id }}" hx-target="#domain-status" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end mb-4 rm-w-50">
+  <div class="col-md-4">
+    <label for="d-status" class="form-label">{{ ctx.t("admin-col-status") }}</label>
+    <select id="d-status" name="status" class="form-select">
+      {% for o in status_options %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label for="d-quota" class="form-label">{{ ctx.t("admin-field-quota-mb") }}</label>
+    <input id="d-quota" name="quota_mb" class="form-control" inputmode="numeric" value="{{ quota_mb }}" autocomplete="off">
+  </div>
+  <div class="col-md-3">
+    <label for="d-max" class="form-label">{{ ctx.t("admin-field-max-mailboxes") }}</label>
+    <input id="d-max" name="max_mailboxes" class="form-control" inputmode="numeric" value="{{ max_mailboxes }}" autocomplete="off">
+  </div>
+  <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-save") }}</button></div>
+  <div class="col-12" id="domain-status" aria-live="polite"></div>
+</form>
+<h2 class="h5 text-danger">{{ ctx.t("admin-danger-zone") }}</h2>
+<form hx-post="/admin/domains/{{ d.id }}/delete" hx-target="#domain-delete-status" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("admin-confirm-delete-domain") }}" class="row g-2 align-items-end rm-w-50">
+  <div class="col-12"><p class="small text-body-secondary mb-1">{{ ctx.t("admin-delete-domain-help") }}</p></div>
+  <div class="col-md-6">
+    <label for="d-confirm" class="form-label">{{ ctx.t_str("admin-type-to-confirm", "value", d.name) }}</label>
+    <input id="d-confirm" name="confirm" class="form-control" autocomplete="off" required>
+  </div>
+  <div class="col-auto"><button type="submit" class="btn btn-outline-danger">{{ ctx.t("admin-delete") }}</button></div>
+  <div class="col-12" id="domain-delete-status" aria-live="polite"></div>
+</form>
+{% endif %}
+{% endblock %}

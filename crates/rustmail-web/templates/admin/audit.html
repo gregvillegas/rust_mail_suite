@@ -1,0 +1,88 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("admin-audit") }}{% endblock %}
+{% block admin_content %}
+<h1 class="h3 mb-3">{{ ctx.t("admin-audit") }}</h1>
+<form method="get" action="/admin/audit" class="row g-2 align-items-end mb-3">
+  <div class="col-sm-6 col-md-3">
+    <label for="au-actor" class="form-label">{{ ctx.t("admin-audit-actor") }}</label>
+    <input id="au-actor" name="actor" class="form-control" value="{{ q.actor }}" maxlength="200" autocomplete="off">
+  </div>
+  <div class="col-sm-6 col-md-3">
+    <label for="au-action" class="form-label">{{ ctx.t("admin-audit-action") }}</label>
+    <select id="au-action" name="action" class="form-select">
+      <option value="">{{ ctx.t("admin-audit-any-action") }}</option>
+      {% for a in actions %}<option value="{{ a.value }}"{% if a.selected %} selected{% endif %}>{{ a.value }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-sm-4 col-md-2">
+    <label for="au-outcome" class="form-label">{{ ctx.t("admin-audit-outcome") }}</label>
+    <select id="au-outcome" name="outcome" class="form-select">
+      <option value="">{{ ctx.t("admin-audit-any-outcome") }}</option>
+      <option value="success"{% if outcome_success %} selected{% endif %}>{{ ctx.t("admin-audit-success") }}</option>
+      <option value="failure"{% if outcome_failure %} selected{% endif %}>{{ ctx.t("admin-audit-failure") }}</option>
+    </select>
+  </div>
+  <div class="col-sm-4 col-md-2">
+    <label for="au-from" class="form-label">{{ ctx.t("admin-audit-from") }}</label>
+    <input id="au-from" name="from" type="date" class="form-control" value="{{ q.from }}">
+  </div>
+  <div class="col-sm-4 col-md-2">
+    <label for="au-to" class="form-label">{{ ctx.t("admin-audit-to") }}</label>
+    <input id="au-to" name="to" type="date" class="form-control" value="{{ q.to }}">
+  </div>
+  <div class="col-sm-8 col-md-5">
+    <label for="au-text" class="form-label">{{ ctx.t("admin-audit-text") }}</label>
+    <input id="au-text" name="text" type="search" class="form-control" value="{{ q.text }}" maxlength="200" autocomplete="off">
+  </div>
+  <div class="col-auto d-flex gap-2">
+    <button type="submit" class="btn btn-primary">{{ ctx.t("admin-filter-apply") }}</button>
+    <a class="btn btn-outline-secondary" href="{{ export_url }}" hx-boost="false" download>{{ ctx.t("admin-audit-export") }}</a>
+  </div>
+</form>
+<p class="small text-body-secondary mb-2">{{ ctx.t_num("admin-total", "count", total) }}</p>
+{% if rows.is_empty() %}
+<p>{{ ctx.t("admin-audit-empty") }}</p>
+{% else %}
+<div class="table-responsive">
+  <table class="table table-sm align-middle" data-testid="audit-table">
+    <thead>
+      <tr>
+        <th scope="col">{{ ctx.t("admin-audit-when") }}</th>
+        <th scope="col">{{ ctx.t("admin-audit-actor") }}</th>
+        <th scope="col">{{ ctx.t("admin-audit-action") }}</th>
+        <th scope="col">{{ ctx.t("admin-audit-outcome") }}</th>
+        <th scope="col">{{ ctx.t("admin-audit-target") }}</th>
+        <th scope="col">{{ ctx.t("admin-audit-ip") }}</th>
+        <th scope="col">{{ ctx.t("admin-audit-details") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td class="text-nowrap small"><time datetime="{{ row.iso }}">{{ row.when }}</time></td>
+        <td class="text-break">{{ row.actor }}</td>
+        <td><code>{{ row.action }}</code></td>
+        <td>{% if row.ok %}<span class="badge text-bg-success">{{ ctx.t("admin-audit-success") }}</span>{% else %}<span class="badge text-bg-danger">{{ ctx.t("admin-audit-failure") }}</span>{% endif %}</td>
+        <td class="text-break small">{{ row.target }}</td>
+        <td class="small">{{ row.ip }}</td>
+        <td>{% if !row.details.is_empty() %}<details><summary class="small">{{ ctx.t("admin-audit-show") }}</summary><pre class="small mb-0 rm-audit-details">{{ row.details }}</pre></details>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if prev_url.is_some() || next_url.is_some() %}
+<nav aria-label="{{ ctx.t("quarantine-pagination") }}">
+  <ul class="pagination">
+    <li class="page-item{% if prev_url.is_none() %} disabled{% endif %}">
+      {% if let Some(url) = prev_url %}<a class="page-link" href="{{ url }}">{{ ctx.t("quarantine-prev") }}</a>{% else %}<span class="page-link">{{ ctx.t("quarantine-prev") }}</span>{% endif %}
+    </li>
+    <li class="page-item active" aria-current="page"><span class="page-link">{{ ctx.t_num("quarantine-page", "page", page) }}</span></li>
+    <li class="page-item{% if next_url.is_none() %} disabled{% endif %}">
+      {% if let Some(url) = next_url %}<a class="page-link" href="{{ url }}">{{ ctx.t("quarantine-next") }}</a>{% else %}<span class="page-link">{{ ctx.t("quarantine-next") }}</span>{% endif %}
+    </li>
+  </ul>
+</nav>
+{% endif %}
+{% endif %}
+{% endblock %}

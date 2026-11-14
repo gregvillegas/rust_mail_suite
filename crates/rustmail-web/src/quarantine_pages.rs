@@ -19,7 +19,6 @@ use axum::http::{HeaderMap, HeaderName, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum_extra::extract::CookieJar;
 use rustmail_core::auth::ClientInfo;
-use rustmail_core::domain::UserRole;
 use rustmail_core::quarantine::{
     Actor, MessagePreview, QuarantineCounts, QuarantineFilter, QuarantineItem, QuarantineKind,
     QuarantineService, QuarantineStatus,
@@ -28,6 +27,7 @@ use rustmail_core::Error;
 use serde::Deserialize;
 use uuid::Uuid;
 
+use crate::admin_common::AdminCtx;
 use crate::app::AppState;
 use crate::auth::csrf::ensure_cookie;
 use crate::auth::ClientMeta;
@@ -38,24 +38,45 @@ const PAGE_SIZE: i64 = 25;
 const MAX_SEARCH_CHARS: usize = 200;
 const HX_REDIRECT: HeaderName = HeaderName::from_static("hx-redirect");
 
-/// A signed-in super administrator.
-pub struct SuperAdmin(pub WebUser);
+/// A signed-in administrator, with the domain they are confined to.
+///
+/// Super administrators see every domain (`None`); a domain administrator sees
+/// only mail addressed to their own domain.
+pub struct QuarantineAdmin(pub WebUser, pub Option<String>);
 
-impl FromRequestParts<AppState> for SuperAdmin {
+impl FromRequestParts<AppState> for QuarantineAdmin {
     type Rejection = Response;
 
     async fn from_request_parts(
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
-        let web = WebUser::from_request_parts(parts, state).await?;
-        // Authorise on the freshly loaded role, not the one baked into the token.
-        if web.user.role == UserRole::SuperAdmin {
-            Ok(Self(web))
+        // AdminCtx authorises on the freshly loaded role, not the one in the token.
+        let AdminCtx { web, admin } = AdminCtx::from_request_parts(parts, state).await?;
+        let domain = if admin.is_super() {
+            None
         } else {
-            Err(PageError::Forbidden.into_response())
-        }
+            // An address without a domain would match every recipient; refuse instead.
+            let domain = web
+                .user
+                .email
+                .rsplit_once('@')
+                .map(|(_, d)| d.to_ascii_lowercase());
+            match domain {
+                Some(d) if !d.is_empty() => Some(d),
+                _ => return Err(PageError::Forbidden.into_response()),
+            }
+        };
+        Ok(Self(web, domain))
     }
+}
+
+/// Whether `item` is inside the administrator's domain.
+fn may_see(admin: &QuarantineAdmin, item: &QuarantineItem) -> bool {
+    admin
+        .1
+        .as_deref()
+        .is_none_or(|d| item.domain().eq_ignore_ascii_case(d))
 }
 
 /// A line above the list reporting what just happened.
@@ -287,7 +308,7 @@ fn service(state: &AppState) -> Option<Arc<QuarantineService>> {
 
 pub(crate) async fn list(
     State(state): State<AppState>,
-    admin: SuperAdmin,
+    admin: QuarantineAdmin,
     jar: CookieJar,
     headers: HeaderMap,
     Query(query): Query<ListQuery>,
@@ -336,16 +357,18 @@ pub(crate) async fn list(
         status,
         kind,
         search: Some(search.clone()),
+        domain: admin.1.clone(),
         limit: PAGE_SIZE,
         offset: (page - 1) * PAGE_SIZE,
     };
-    let (listing, counts) = match tokio::try_join!(service.list(&filter), service.counts()) {
-        Ok(result) => result,
-        Err(error) => {
-            tracing::error!(%error, "could not load the quarantine");
-            return PageError::Internal.into_response();
-        }
-    };
+    let (listing, counts) =
+        match tokio::try_join!(service.list(&filter), service.counts(admin.1.as_deref())) {
+            Ok(result) => result,
+            Err(error) => {
+                tracing::error!(%error, "could not load the quarantine");
+                return PageError::Internal.into_response();
+            }
+        };
 
     let status_value = status.map_or("any", QuarantineStatus::as_str);
     let kind_value = kind.map_or("", QuarantineKind::as_str);
@@ -388,7 +411,7 @@ pub(crate) async fn list(
 
 pub(crate) async fn detail(
     State(state): State<AppState>,
-    admin: SuperAdmin,
+    admin: QuarantineAdmin,
     jar: CookieJar,
     headers: HeaderMap,
     Path(id): Path<Uuid>,
@@ -404,6 +427,10 @@ pub(crate) async fn detail(
             return PageError::Internal.into_response();
         }
     };
+    // Another domain's message does not exist as far as this administrator can tell.
+    if !may_see(&admin, &item) {
+        return PageError::NotFound.into_response();
+    }
     // A deleted message has no file any more; only held and released ones can be read.
     let preview = if item.status == QuarantineStatus::Deleted {
         None
@@ -449,7 +476,7 @@ fn back(done: &'static str) -> Response {
         .into_response()
 }
 
-fn actor(admin: &SuperAdmin, client: ClientInfo) -> Actor {
+fn actor(admin: &QuarantineAdmin, client: ClientInfo) -> Actor {
     Actor {
         user_id: admin.0.user.id,
         email: admin.0.user.email.clone(),
@@ -459,13 +486,21 @@ fn actor(admin: &SuperAdmin, client: ClientInfo) -> Actor {
 
 pub(crate) async fn release(
     State(state): State<AppState>,
-    admin: SuperAdmin,
+    admin: QuarantineAdmin,
     ClientMeta(client): ClientMeta,
     Path(id): Path<Uuid>,
 ) -> Response {
     let Some(service) = service(&state) else {
         return PageError::NotFound.into_response();
     };
+    match service.get(id).await {
+        Ok(item) if may_see(&admin, &item) => {}
+        Ok(_) | Err(Error::NotFound { .. }) => return PageError::NotFound.into_response(),
+        Err(error) => {
+            tracing::error!(%error, "could not load a quarantine item");
+            return PageError::Internal.into_response();
+        }
+    }
     match service.release(id, &actor(&admin, client)).await {
         Ok(_) => back("released"),
         Err(Error::NotFound { .. } | Error::Conflict(_)) => back("gone"),
@@ -478,13 +513,21 @@ pub(crate) async fn release(
 
 pub(crate) async fn delete(
     State(state): State<AppState>,
-    admin: SuperAdmin,
+    admin: QuarantineAdmin,
     ClientMeta(client): ClientMeta,
     Path(id): Path<Uuid>,
 ) -> Response {
     let Some(service) = service(&state) else {
         return PageError::NotFound.into_response();
     };
+    match service.get(id).await {
+        Ok(item) if may_see(&admin, &item) => {}
+        Ok(_) | Err(Error::NotFound { .. }) => return PageError::NotFound.into_response(),
+        Err(error) => {
+            tracing::error!(%error, "could not load a quarantine item");
+            return PageError::Internal.into_response();
+        }
+    }
     match service.delete(id, &actor(&admin, client)).await {
         Ok(()) => back("deleted"),
         Err(Error::NotFound { .. } | Error::Conflict(_)) => back("gone"),

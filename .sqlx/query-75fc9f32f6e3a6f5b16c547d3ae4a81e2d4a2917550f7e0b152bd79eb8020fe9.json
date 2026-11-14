@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM aliases WHERE destination = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "75fc9f32f6e3a6f5b16c547d3ae4a81e2d4a2917550f7e0b152bd79eb8020fe9"
+}

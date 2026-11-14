@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT (EXISTS (SELECT 1 FROM users WHERE email = $1)\n                    OR EXISTS (SELECT 1 FROM aliases WHERE address = $1)\n                    OR EXISTS (SELECT 1 FROM groups WHERE address = $1)) AS \"taken!\"",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "taken!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "f9ec0640f8cdf490219036cc81fcdcbeec1fb1f54b88b65099911bf63d997b4c"
+}

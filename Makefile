@@ -10,7 +10,7 @@ export
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: help dev dev-down dev-logs migrate seed secret run-web browser-test mta-up mta-down mta-smoke mta-check pipeline-ingest pipeline-follow prepare prepare-check test lint fmt build check clean
+.PHONY: admin-smoke help dev dev-down dev-logs migrate seed secret run-web browser-test mta-up mta-down mta-smoke mta-check webmail-smoke mail-index pipeline-ingest pipeline-follow prepare prepare-check test lint fmt build check clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -63,6 +63,16 @@ mta-check: ## Render every Postfix/Dovecot template and fail on undefined variab
 mta-smoke: ## End-to-end mail check: delivery, IMAP, quota, virus/spam filtering, quarantine (needs mta-up; ~7 min)
 	cargo build -q -p rustmail-cli
 	scripts/mta-smoke.sh
+
+webmail-smoke: ## Webmail end-to-end test in a real browser (needs mta-up, Chrome, built binaries)
+	cargo build -p rustmail-web -p rustmail-cli
+	cd scripts/browser-smoke && npm install --no-audit --no-fund && npm run webmail
+
+admin-smoke: ## Admin console end-to-end test in a real browser (needs mta-up, Chrome, built binaries)
+	cargo build -p rustmail-web -p rustmail-cli
+	cd scripts/browser-smoke && npm install --no-audit --no-fund && npm run admin
+mail-index: ## Index a user's mailbox for webmail search (USER=alice@example.com)
+	cargo run -q -p rustmail-cli -- mail index $(USER)
 
 pipeline-ingest: ## Read the dev MTA logs once into events and the quarantine index
 	cargo run -q -p rustmail-cli -- pipeline ingest

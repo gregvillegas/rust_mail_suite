@@ -33,7 +33,12 @@ impl Address {
     /// `Name <address>` or just the address, for display.
     #[must_use]
     pub fn display(&self) -> String {
-        match self.name.as_deref().map(str::trim).filter(|n| !n.is_empty()) {
+        match self
+            .name
+            .as_deref()
+            .map(str::trim)
+            .filter(|n| !n.is_empty())
+        {
             Some(name) if name != self.email => format!("{name} <{}>", self.email),
             _ => self.email.clone(),
         }
@@ -175,9 +180,12 @@ pub fn summary_from_headers(
         };
     };
     let date = m.date().and_then(|d| to_utc(&d));
-    let has_attachments = m
-        .content_type()
-        .is_some_and(|ct| ct.ctype().eq_ignore_ascii_case("multipart") && ct.subtype().is_some_and(|s| s.eq_ignore_ascii_case("mixed")));
+    let has_attachments = m.content_type().is_some_and(|ct| {
+        ct.ctype().eq_ignore_ascii_case("multipart")
+            && ct
+                .subtype()
+                .is_some_and(|s| s.eq_ignore_ascii_case("mixed"))
+    });
     MessageSummary {
         uid,
         flags,
@@ -289,7 +297,12 @@ pub fn parse(raw: &[u8]) -> MailResult<ParsedMessage> {
         message_id: m.message_id().map(str::to_owned),
         references: m
             .references()
-            .map(|l| (0..l.len()).filter_map(|i| l.get(i)).map(str::to_owned).collect())
+            .map(|l| {
+                (0..l.len())
+                    .filter_map(|i| l.get(i))
+                    .map(str::to_owned)
+                    .collect()
+            })
             .unwrap_or_default(),
         in_reply_to: m.in_reply_to().and_then(|l| l.first()).map(str::to_owned),
         text,
@@ -414,17 +427,29 @@ mod tests {
         let s = summary_from_headers(7, Flags::default(), 1234, None, SIMPLE);
         assert_eq!(s.uid, 7);
         assert_eq!(s.subject, "Grüße");
-        assert_eq!(s.from.as_ref().map(Address::display).as_deref(), Some("Ann Lee <ann@example.com>"));
+        assert_eq!(
+            s.from.as_ref().map(Address::display).as_deref(),
+            Some("Ann Lee <ann@example.com>")
+        );
         assert_eq!(s.to.len(), 2);
         assert_eq!(s.cc[0].email, "dan@example.com");
-        assert_eq!(s.date.map(|d| d.to_rfc3339()).as_deref(), Some("2025-11-11T08:30:00+00:00"));
+        assert_eq!(
+            s.date.map(|d| d.to_rfc3339()).as_deref(),
+            Some("2025-11-11T08:30:00+00:00")
+        );
         assert_eq!(s.message_id.as_deref(), Some("abc@example.com"));
         assert!(!s.has_attachments);
     }
 
     #[test]
     fn garbage_headers_do_not_panic() {
-        for junk in [&b""[..], b"\x00\xff\xfe", b"no colon here", b"Subject:\r\n\r\n", b"From: <<<>>>\r\n\r\n"] {
+        for junk in [
+            &b""[..],
+            b"\x00\xff\xfe",
+            b"no colon here",
+            b"Subject:\r\n\r\n",
+            b"From: <<<>>>\r\n\r\n",
+        ] {
             let s = summary_from_headers(1, Flags::default(), 0, None, junk);
             assert_eq!(s.uid, 1);
         }
@@ -460,7 +485,10 @@ mod tests {
         assert_eq!(a.size, 9);
         let data = attachment(WITH_ATTACHMENT, 0).unwrap();
         assert_eq!(data.data, b"Hello PDF");
-        assert!(matches!(attachment(WITH_ATTACHMENT, 1), Err(MailError::NotFound)));
+        assert!(matches!(
+            attachment(WITH_ATTACHMENT, 1),
+            Err(MailError::NotFound)
+        ));
     }
 
     #[test]
@@ -492,7 +520,22 @@ mod tests {
 
     fn assert_clean(html: &str, remote_images: bool) -> String {
         let out = sanitize_html(html, remote_images).to_lowercase();
-        for bad in ["<script", "javascript:", "onerror", "onclick", "onload", "<iframe", "<object", "<embed", "<form", "<style", "<link", "<meta", "<base", "expression("] {
+        for bad in [
+            "<script",
+            "javascript:",
+            "onerror",
+            "onclick",
+            "onload",
+            "<iframe",
+            "<object",
+            "<embed",
+            "<form",
+            "<style",
+            "<link",
+            "<meta",
+            "<base",
+            "expression(",
+        ] {
             assert!(!out.contains(bad), "{bad} survived in {out}");
         }
         out
@@ -529,7 +572,10 @@ mod tests {
     #[test]
     fn safe_formatting_survives() {
         let out = sanitize_html("<p>Hi <b>there</b> <a href=\"https://example.com/x\">link</a></p><ul><li>one</li></ul>", false);
-        assert!(out.contains("<b>there</b>") && out.contains("<li>one</li>"), "{out}");
+        assert!(
+            out.contains("<b>there</b>") && out.contains("<li>one</li>"),
+            "{out}"
+        );
         assert!(out.contains("href=\"https://example.com/x\""), "{out}");
     }
 
@@ -537,12 +583,18 @@ mod tests {
     fn links_open_elsewhere_without_leaking_the_page() {
         let out = sanitize_html("<a href=\"https://example.com\">x</a>", false);
         assert!(out.contains("target=\"_blank\""), "{out}");
-        assert!(out.contains("noopener") && out.contains("noreferrer"), "{out}");
+        assert!(
+            out.contains("noopener") && out.contains("noreferrer"),
+            "{out}"
+        );
     }
 
     #[test]
     fn mailto_links_are_kept_and_relative_links_are_dropped() {
-        let out = sanitize_html("<a href=\"mailto:a@b.c\">m</a><a href=\"/admin\">r</a>", false);
+        let out = sanitize_html(
+            "<a href=\"mailto:a@b.c\">m</a><a href=\"/admin\">r</a>",
+            false,
+        );
         assert!(out.contains("mailto:a@b.c"));
         assert!(!out.contains("/admin"), "{out}");
     }
@@ -554,13 +606,22 @@ mod tests {
         let blocked = sanitize_html(html, false);
         assert!(!blocked.contains("tracker.example"), "{blocked}");
         let allowed = sanitize_html(html, true);
-        assert!(allowed.contains("https://tracker.example/pixel.gif"), "{allowed}");
+        assert!(
+            allowed.contains("https://tracker.example/pixel.gif"),
+            "{allowed}"
+        );
         assert!(!has_remote_images("<p>no images</p>"));
     }
 
     #[test]
     fn other_image_sources_are_never_loaded() {
-        for src in ["cid:logo@x", "data:image/png;base64,AAAA", "file:///etc/passwd", "ftp://x/y.png", "//x/y.png"] {
+        for src in [
+            "cid:logo@x",
+            "data:image/png;base64,AAAA",
+            "file:///etc/passwd",
+            "ftp://x/y.png",
+            "//x/y.png",
+        ] {
             let out = sanitize_html(&format!("<img src=\"{src}\">"), true);
             assert!(!out.contains(src), "{src} survived: {out}");
         }
@@ -568,11 +629,26 @@ mod tests {
 
     #[test]
     fn address_display_forms() {
-        let a = Address { name: Some("Ann".into()), email: "ann@x.y".into() };
-        assert_eq!((a.display().as_str(), a.short().as_str()), ("Ann <ann@x.y>", "Ann"));
-        let b = Address { name: None, email: "b@x.y".into() };
-        assert_eq!((b.display().as_str(), b.short().as_str()), ("b@x.y", "b@x.y"));
-        let c = Address { name: Some("c@x.y".into()), email: "c@x.y".into() };
+        let a = Address {
+            name: Some("Ann".into()),
+            email: "ann@x.y".into(),
+        };
+        assert_eq!(
+            (a.display().as_str(), a.short().as_str()),
+            ("Ann <ann@x.y>", "Ann")
+        );
+        let b = Address {
+            name: None,
+            email: "b@x.y".into(),
+        };
+        assert_eq!(
+            (b.display().as_str(), b.short().as_str()),
+            ("b@x.y", "b@x.y")
+        );
+        let c = Address {
+            name: Some("c@x.y".into()),
+            email: "c@x.y".into(),
+        };
         assert_eq!(c.display(), "c@x.y");
     }
 

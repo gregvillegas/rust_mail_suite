@@ -22,7 +22,9 @@ use tokio_rustls::client::TlsStream;
 use crate::config::MailConfig;
 use crate::error::{MailError, MailResult};
 use crate::folder::{special_from_name, validate_name, Folder, SpecialUse};
-use crate::message::{summary_from_headers, Flags, MessageSummary, MAX_MESSAGE_BYTES, SUMMARY_HEADERS};
+use crate::message::{
+    summary_from_headers, Flags, MessageSummary, MAX_MESSAGE_BYTES, SUMMARY_HEADERS,
+};
 use crate::{tls, utf7};
 
 /// Time limit for one operation (not for IDLE).
@@ -137,16 +139,21 @@ impl MailSession {
                 .read_response()
                 .await?
                 .ok_or_else(|| MailError::Connect("the server closed the connection".into()))?;
-            let mut session = client
-                .login(login, &config.master_password)
-                .await
-                .map_err(|(error, _)| match error {
-                    async_imap::error::Error::No(_) | async_imap::error::Error::Bad(_) => MailError::Auth,
+            let mut session = client.login(login, &config.master_password).await.map_err(
+                |(error, _)| match error {
+                    async_imap::error::Error::No(_) | async_imap::error::Error::Bad(_) => {
+                        MailError::Auth
+                    }
                     other => MailError::from(other),
-                })?;
+                },
+            )?;
             // The hierarchy separator, needed to validate and build folder names.
             let delimiter = {
-                let names: Vec<_> = session.list(Some(""), Some("")).await?.try_collect().await?;
+                let names: Vec<_> = session
+                    .list(Some(""), Some(""))
+                    .await?
+                    .try_collect()
+                    .await?;
                 names
                     .first()
                     .and_then(|n| n.delimiter().map(str::to_owned))
@@ -174,13 +181,21 @@ impl MailSession {
     /// Connection or protocol errors.
     pub async fn folders(&mut self) -> MailResult<Vec<Folder>> {
         limited(async {
-            let names: Vec<_> = self.session.list(Some(""), Some("*")).await?.try_collect().await?;
+            let names: Vec<_> = self
+                .session
+                .list(Some(""), Some("*"))
+                .await?
+                .try_collect()
+                .await?;
             let mut folders = Vec::with_capacity(names.len());
             for name in &names {
                 let Some(decoded) = utf7::decode(name.name()) else {
                     continue; // a name we cannot represent safely is not offered
                 };
-                let selectable = !name.attributes().iter().any(|a| matches!(a, NameAttribute::NoSelect));
+                let selectable = !name
+                    .attributes()
+                    .iter()
+                    .any(|a| matches!(a, NameAttribute::NoSelect));
                 let special = name
                     .attributes()
                     .iter()
@@ -252,7 +267,12 @@ impl MailSession {
     ///
     /// # Errors
     /// [`MailError::NotFound`] if the folder does not exist.
-    pub async fn list(&mut self, folder: &str, page: u32, per_page: u32) -> MailResult<MessagePage> {
+    pub async fn list(
+        &mut self,
+        folder: &str,
+        page: u32,
+        per_page: u32,
+    ) -> MailResult<MessagePage> {
         let per_page = per_page.clamp(1, 200);
         let page = page.max(1);
         limited(async {
@@ -261,15 +281,28 @@ impl MailSession {
             let uid_validity = mailbox.uid_validity.unwrap_or(0);
             let skip = (page - 1).saturating_mul(per_page);
             if total == 0 || skip >= total {
-                return Ok(MessagePage { uid_validity, total, items: Vec::new() });
+                return Ok(MessagePage {
+                    uid_validity,
+                    total,
+                    items: Vec::new(),
+                });
             }
             let end = total - skip;
             let start = end.saturating_sub(per_page - 1).max(1);
             let query = format!("(UID FLAGS RFC822.SIZE INTERNALDATE {SUMMARY_HEADERS})");
-            let fetched: Vec<Fetch> = self.session.fetch(format!("{start}:{end}"), query).await?.try_collect().await?;
+            let fetched: Vec<Fetch> = self
+                .session
+                .fetch(format!("{start}:{end}"), query)
+                .await?
+                .try_collect()
+                .await?;
             let mut items: Vec<_> = fetched.iter().filter_map(summary_of).collect();
-            items.sort_by(|a, b| b.uid.cmp(&a.uid));
-            Ok(MessagePage { uid_validity, total, items })
+            items.sort_by_key(|s| std::cmp::Reverse(s.uid));
+            Ok(MessagePage {
+                uid_validity,
+                total,
+                items,
+            })
         })
         .await
     }
@@ -285,7 +318,11 @@ impl MailSession {
                 .status(utf7::encode(folder), "(UIDVALIDITY UIDNEXT MESSAGES)")
                 .await
                 .map_err(|_| MailError::NotFound)?;
-            Ok((status.uid_validity.unwrap_or(0), status.uid_next.unwrap_or(1), status.exists))
+            Ok((
+                status.uid_validity.unwrap_or(0),
+                status.uid_next.unwrap_or(1),
+                status.exists,
+            ))
         })
         .await
     }
@@ -294,7 +331,12 @@ impl MailSession {
     ///
     /// # Errors
     /// [`MailError::NotFound`] if the folder does not exist.
-    pub async fn summaries_after(&mut self, folder: &str, after_uid: u32, limit: usize) -> MailResult<Vec<MessageSummary>> {
+    pub async fn summaries_after(
+        &mut self,
+        folder: &str,
+        after_uid: u32,
+        limit: usize,
+    ) -> MailResult<Vec<MessageSummary>> {
         limited(async {
             self.select_ro(folder).await?;
             let query = format!("(UID FLAGS RFC822.SIZE INTERNALDATE {SUMMARY_HEADERS})");
@@ -322,7 +364,12 @@ impl MailSession {
     /// # Errors
     /// [`MailError::NotFound`] if the folder or message is gone,
     /// [`MailError::TooLarge`] above 25 MB.
-    pub async fn message(&mut self, folder: &str, uid: u32, mark_read: bool) -> MailResult<RawMessage> {
+    pub async fn message(
+        &mut self,
+        folder: &str,
+        uid: u32,
+        mark_read: bool,
+    ) -> MailResult<RawMessage> {
         if uid == 0 {
             return Err(MailError::NotFound);
         }
@@ -339,9 +386,14 @@ impl MailSession {
                 .await?
                 .try_collect()
                 .await?;
-            let meta = meta.iter().find(|f| f.uid == Some(uid)).ok_or(MailError::NotFound)?;
+            let meta = meta
+                .iter()
+                .find(|f| f.uid == Some(uid))
+                .ok_or(MailError::NotFound)?;
             if meta.size.unwrap_or(0) > MAX_MESSAGE_BYTES {
-                return Err(MailError::TooLarge("this message is too large to display".into()));
+                return Err(MailError::TooLarge(
+                    "this message is too large to display".into(),
+                ));
             }
             let flags = flags_of(meta);
             let body: Vec<Fetch> = self
@@ -359,7 +411,11 @@ impl MailSession {
             if mark_read && !flags.seen {
                 self.store(uid, FlagKind::Seen, true).await?;
             }
-            Ok(RawMessage { uid_validity, flags, bytes })
+            Ok(RawMessage {
+                uid_validity,
+                flags,
+                bytes,
+            })
         })
         .await
     }
@@ -368,7 +424,10 @@ impl MailSession {
         let sign = if on { "+" } else { "-" };
         let _: Vec<Fetch> = self
             .session
-            .uid_store(uid.to_string(), format!("{sign}FLAGS.SILENT ({})", flag.name()))
+            .uid_store(
+                uid.to_string(),
+                format!("{sign}FLAGS.SILENT ({})", flag.name()),
+            )
             .await?
             .try_collect()
             .await?;
@@ -379,7 +438,13 @@ impl MailSession {
     ///
     /// # Errors
     /// [`MailError::NotFound`] if the folder is gone.
-    pub async fn set_flag(&mut self, folder: &str, uid: u32, flag: FlagKind, on: bool) -> MailResult<()> {
+    pub async fn set_flag(
+        &mut self,
+        folder: &str,
+        uid: u32,
+        flag: FlagKind,
+        on: bool,
+    ) -> MailResult<()> {
         if uid == 0 {
             return Err(MailError::NotFound);
         }
@@ -406,7 +471,10 @@ impl MailSession {
                 Err(async_imap::error::Error::No(_)) => Err(MailError::NotFound),
                 Err(_) => {
                     // A server without MOVE: copy, flag, expunge.
-                    self.session.uid_copy(uid.to_string(), &to).await.map_err(|_| MailError::NotFound)?;
+                    self.session
+                        .uid_copy(uid.to_string(), &to)
+                        .await
+                        .map_err(|_| MailError::NotFound)?;
                     self.store_deleted_and_expunge(uid).await
                 }
             }
@@ -421,7 +489,12 @@ impl MailSession {
             .await?
             .try_collect()
             .await?;
-        let _: Vec<u32> = self.session.uid_expunge(uid.to_string()).await?.try_collect().await?;
+        let _: Vec<u32> = self
+            .session
+            .uid_expunge(uid.to_string())
+            .await?
+            .try_collect()
+            .await?;
         Ok(())
     }
 
@@ -473,10 +546,11 @@ impl MailSession {
     pub async fn create_folder(&mut self, name: &str) -> MailResult<()> {
         validate_name(name, &self.delimiter)?;
         limited(async {
-            self.session
-                .create(utf7::encode(name))
-                .await
-                .map_err(|_| MailError::Invalid("that folder could not be created (does it already exist?)".into()))?;
+            self.session.create(utf7::encode(name)).await.map_err(|_| {
+                MailError::Invalid(
+                    "that folder could not be created (does it already exist?)".into(),
+                )
+            })?;
             let _ = self.session.subscribe(utf7::encode(name)).await;
             Ok(())
         })
@@ -516,7 +590,9 @@ impl MailSession {
             .filter(|f| f.name.starts_with(&prefix))
             .map(|f| {
                 if f.special.is_some() {
-                    Err(MailError::Invalid("a standard folder inside it cannot be deleted".into()))
+                    Err(MailError::Invalid(
+                        "a standard folder inside it cannot be deleted".into(),
+                    ))
                 } else {
                     Ok(f.name)
                 }
@@ -546,9 +622,9 @@ impl MailSession {
         let folders = self.folders().await?;
         match folders.iter().find(|f| f.name == name) {
             None => Err(MailError::NotFound),
-            Some(f) if f.special.is_some() => {
-                Err(MailError::Invalid("standard folders cannot be renamed or deleted".into()))
-            }
+            Some(f) if f.special.is_some() => Err(MailError::Invalid(
+                "standard folders cannot be renamed or deleted".into(),
+            )),
             Some(_) => Ok(()),
         }
     }
@@ -558,7 +634,11 @@ impl MailSession {
     ///
     /// # Errors
     /// Connection or protocol errors; the session is lost in that case.
-    pub async fn wait_for_change(mut self, folder: &str, max_wait: Duration) -> MailResult<(Self, Change)> {
+    pub async fn wait_for_change(
+        mut self,
+        folder: &str,
+        max_wait: Duration,
+    ) -> MailResult<(Self, Change)> {
         self.select_ro(folder).await?;
         let delimiter = self.delimiter;
         let mut handle = self.session.idle();

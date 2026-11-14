@@ -12,15 +12,19 @@ use axum::response::Response;
 use axum::routing::get;
 use axum::Router;
 use axum_extra::extract::CookieJar;
+use rustmail_core::admin::AdminService;
 use rustmail_core::db::PgPool;
 use rustmail_core::domain::User;
+use rustmail_core::provisioning::MailboxProvisioner;
 use rustmail_core::quarantine::QuarantineService;
 use serde::Deserialize;
 use tower_http::services::ServeDir;
 
+use crate::admin_common::ImportResults;
 use crate::assets::{AssetSource, Assets, STATIC_PREFIX};
 use crate::auth::cookies::ACCESS_COOKIE;
 use crate::auth::{self, rate_limit, AuthState, RateLimitJanitor, RateLimits};
+use crate::mail::MailService;
 use crate::pages::{self, is_htmx, resolve_locale};
 use crate::ui::{render, ErrorPage, PageCtx, PageError, ToastPartial, UserView};
 
@@ -44,6 +48,12 @@ pub struct AppState {
     pub assets: Arc<Assets>,
     /// Quarantine service, present when `QUARANTINE_DIR` is configured.
     pub quarantine: Option<Arc<QuarantineService>>,
+    /// Webmail, present when `MAIL_MASTER_PASSWORD` is configured.
+    pub mail: Option<Arc<MailService>>,
+    /// Administration service (scoped CRUD, audit, quota, import).
+    pub admin: Arc<AdminService>,
+    /// Bulk-import result files awaiting a one-time download.
+    pub import_results: Arc<ImportResults>,
     static_dir: Arc<PathBuf>,
     csp: Arc<HeaderValue>,
 }
@@ -72,9 +82,12 @@ impl AppState {
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
         Ok(Self {
             auth,
-            pool,
+            pool: pool.clone(),
             assets: Arc::new(assets),
             quarantine: None,
+            mail: None,
+            admin: Arc::new(AdminService::new(pool.clone(), None)),
+            import_results: Arc::new(ImportResults::default()),
             static_dir: Arc::new(static_dir),
             csp: Arc::new(csp),
         })
@@ -82,6 +95,22 @@ impl AppState {
 }
 
 impl AppState {
+    /// Enables webmail.
+    #[must_use]
+    pub fn with_mail(mut self, service: MailService) -> Self {
+        self.mail = Some(Arc::new(service));
+        self
+    }
+
+    /// Lets the console create and remove Maildirs (needs write access to `VMAIL_BASE`).
+    #[must_use]
+    pub fn with_mail_dir(mut self, provisioner: MailboxProvisioner) -> Self {
+        self.admin = Arc::new(AdminService::new(
+            self.pool.clone(),
+            Some(Arc::new(provisioner)),
+        ));
+        self
+    }
     /// Enables the quarantine pages.
     #[must_use]
     pub fn with_quarantine(mut self, service: QuarantineService) -> Self {

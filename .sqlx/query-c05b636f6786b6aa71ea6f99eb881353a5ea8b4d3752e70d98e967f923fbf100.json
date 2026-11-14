@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE users SET display_name = $2, role = $3::text::user_role WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c05b636f6786b6aa71ea6f99eb881353a5ea8b4d3752e70d98e967f923fbf100"
+}

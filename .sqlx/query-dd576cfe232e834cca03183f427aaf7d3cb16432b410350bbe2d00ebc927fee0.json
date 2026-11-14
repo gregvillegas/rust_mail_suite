@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT d.name AS domain,\n                      count(m.id) AS \"mailboxes!\",\n                      COALESCE(sum(q.bytes_used), 0)::bigint AS \"used!\",\n                      COALESCE(sum(COALESCE(m.quota_bytes, d.default_quota_bytes))\n                               FILTER (WHERE COALESCE(m.quota_bytes, d.default_quota_bytes) > 0), 0)::bigint AS \"limited!\",\n                      count(m.id) FILTER (WHERE COALESCE(m.quota_bytes, d.default_quota_bytes, 0) = 0) AS \"unlimited!\"\n               FROM domains d\n               LEFT JOIN users u ON u.domain_id = d.id\n               LEFT JOIN mailboxes m ON m.user_id = u.id\n               LEFT JOIN quota_usage q ON q.mailbox_id = m.id\n               WHERE ($1::uuid IS NULL OR d.id = $1)\n               GROUP BY d.name ORDER BY d.name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "domain",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "mailboxes!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "used!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "limited!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "unlimited!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "dd576cfe232e834cca03183f427aaf7d3cb16432b410350bbe2d00ebc927fee0"
+}

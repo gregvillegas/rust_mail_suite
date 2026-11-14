@@ -68,3 +68,30 @@ main:focus { outline: none; }
 }
 /* Quarantine message excerpt: keep line breaks, wrap long lines, bound the height. */
 .rm-excerpt { white-space: pre-wrap; max-height: 24rem; overflow: auto; font-size: 0.875rem; }
+
+/* Webmail three-pane layout (Phase 6). */
+.rm-mail { display: grid; grid-template-columns: 14rem minmax(18rem, 26rem) 1fr; height: calc(100vh - 13rem); min-height: 30rem; }
+.rm-mail-pane { overflow: auto; min-width: 0; }
+.rm-mail-pane + .rm-mail-pane { border-left: var(--bs-border-width) solid var(--bs-border-color); }
+.rm-row:hover { background: var(--bs-tertiary-bg); }
+.rm-row.active { background: var(--bs-primary-bg-subtle); }
+.rm-row.unread .rm-from, .rm-row.unread .rm-subject { font-weight: 600; }
+.rm-mail-frame { width: 100%; height: 55vh; border: var(--bs-border-width) solid var(--bs-border-color); border-radius: var(--bs-border-radius); background: #fff; }
+.rm-message-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; max-height: 60vh; overflow: auto; }
+.rm-mail-search { max-width: 32rem; }
+.rm-compose-body { font-family: var(--bs-font-monospace); }
+.rm-depth-1 { padding-left: 1.5rem !important; }
+.rm-depth-2 { padding-left: 2.5rem !important; }
+.rm-depth-3 { padding-left: 3.5rem !important; }
+@media (max-width: 991.98px) {
+  .rm-mail { display: block; height: auto; }
+  .rm-mail-pane { max-height: 60vh; }
+  .rm-mail-pane + .rm-mail-pane { border-left: 0; border-top: var(--bs-border-width) solid var(--bs-border-color); }
+}
+
+/* Admin console: form widths (no inline styles under the CSP) and charts. */
+.rm-w-40 { max-width: 40rem; }
+.rm-w-50 { max-width: 50rem; }
+.rm-w-60 { max-width: 60rem; }
+.rm-chart { position: relative; height: 18rem; }
+.rm-audit-details { max-width: 28rem; white-space: pre-wrap; word-break: break-all; }

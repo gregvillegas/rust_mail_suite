@@ -1,0 +1,32 @@
+<h2 class="h5">{{ ctx.t("admin-import-preview-title") }}</h2>
+<p data-testid="import-summary">{{ ctx.t_num("admin-import-valid-count", "count", valid.len() as i64) }} · {{ ctx.t_num("admin-import-problem-count", "count", problems.len() as i64) }}</p>
+{% if !problems.is_empty() %}
+<div class="table-responsive">
+  <table class="table table-sm" data-testid="import-problems">
+    <thead><tr><th scope="col">{{ ctx.t("admin-import-line") }}</th><th scope="col">{{ ctx.t("admin-col-email") }}</th><th scope="col">{{ ctx.t("admin-import-problem") }}</th></tr></thead>
+    <tbody>
+      {% for p in problems %}<tr class="table-danger"><td>{{ p.line }}</td><td class="text-break">{{ p.email }}</td><td>{{ p.message }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% if !valid.is_empty() %}
+<div class="table-responsive">
+  <table class="table table-sm" data-testid="import-valid">
+    <thead><tr><th scope="col">{{ ctx.t("admin-import-line") }}</th><th scope="col">{{ ctx.t("admin-col-email") }}</th><th scope="col">{{ ctx.t("admin-col-name") }}</th><th scope="col">{{ ctx.t("admin-col-role") }}</th><th scope="col">{{ ctx.t("admin-col-quota") }}</th><th scope="col">{{ ctx.t("admin-field-password") }}</th></tr></thead>
+    <tbody>
+      {% for v in valid %}
+      <tr><td>{{ v.line }}</td><td class="text-break">{{ v.email }}</td><td>{{ v.name }}</td><td>{{ ctx.t(v.role_key) }}</td><td>{{ v.quota }}</td><td>{% if v.has_password %}{{ ctx.t("admin-import-password-given") }}{% else %}{{ ctx.t("admin-import-password-generated") }}{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% if problems.is_empty() && !valid.is_empty() %}
+<form hx-post="/admin/import/apply" hx-target="#import-area" hx-swap="innerHTML" hx-boost="false" hx-disabled-elt="#import-apply-btn">
+  <input type="hidden" name="csv" value="{{ csv }}">
+  <button id="import-apply-btn" type="submit" class="btn btn-success">{{ ctx.t_num("admin-import-apply", "count", valid.len() as i64) }}</button>
+</form>
+{% else if !problems.is_empty() %}
+<div class="alert alert-warning" role="alert">{{ ctx.t("admin-import-fix-first") }}</div>
+{% endif %}

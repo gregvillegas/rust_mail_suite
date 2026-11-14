@@ -161,6 +161,16 @@ pub struct QuarantineItem {
     pub resolved_at: Option<DateTime<Utc>>,
 }
 
+impl QuarantineItem {
+    /// The recipient's domain, lower-case.
+    #[must_use]
+    pub fn domain(&self) -> String {
+        self.recipient
+            .rsplit_once('@')
+            .map_or_else(String::new, |(_, d)| d.to_lowercase())
+    }
+}
+
 /// Which items to list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QuarantineFilter {
@@ -170,6 +180,8 @@ pub struct QuarantineFilter {
     pub kind: Option<QuarantineKind>,
     /// Text to look for in sender or recipient.
     pub search: Option<String>,
+    /// Only messages for recipients in this domain (set for domain administrators).
+    pub domain: Option<String>,
     /// Rows per page, at most [`MAX_PAGE_SIZE`].
     pub limit: i64,
     /// Rows to skip.
@@ -182,6 +194,7 @@ impl Default for QuarantineFilter {
             status: Some(QuarantineStatus::Held),
             kind: None,
             search: None,
+            domain: None,
             limit: 25,
             offset: 0,
         }
@@ -333,6 +346,7 @@ impl QuarantineService {
             .map(str::trim)
             .filter(|s| !s.is_empty())
             .map(|s| format!("%{}%", like_escape(s)));
+        let domain = filter.domain.as_deref().map(str::to_lowercase);
         let limit = filter.limit.clamp(1, MAX_PAGE_SIZE);
         let offset = filter.offset.max(0);
 
@@ -340,10 +354,12 @@ impl QuarantineService {
             r#"SELECT count(*) AS "n!" FROM quarantine_items
                WHERE ($1::text IS NULL OR status = $1)
                  AND ($2::text IS NULL OR kind = $2)
-                 AND ($3::text IS NULL OR recipient ILIKE $3 OR sender ILIKE $3)"#,
+                 AND ($3::text IS NULL OR recipient ILIKE $3 OR sender ILIKE $3)
+                 AND ($4::text IS NULL OR split_part(recipient, '@', 2) = $4)"#,
             status,
             kind,
-            search
+            search,
+            domain
         )
         .fetch_one(&self.pool)
         .await?;
@@ -357,11 +373,13 @@ impl QuarantineService {
                WHERE ($1::text IS NULL OR status = $1)
                  AND ($2::text IS NULL OR kind = $2)
                  AND ($3::text IS NULL OR recipient ILIKE $3 OR sender ILIKE $3)
+                 AND ($4::text IS NULL OR split_part(recipient, '@', 2) = $4)
                ORDER BY received_at DESC, id
-               LIMIT $4 OFFSET $5"#,
+               LIMIT $5 OFFSET $6"#,
             status,
             kind,
             search,
+            domain,
             limit,
             offset
         )
@@ -373,13 +391,17 @@ impl QuarantineService {
         })
     }
 
-    /// Counts held messages by category.
+    /// Counts held messages by category, optionally only for one recipient domain.
     ///
     /// # Errors
     /// Fails on database errors.
-    pub async fn counts(&self) -> Result<QuarantineCounts> {
+    pub async fn counts(&self, domain: Option<&str>) -> Result<QuarantineCounts> {
+        let domain = domain.map(str::to_lowercase);
         let rows = sqlx::query!(
-            r#"SELECT kind, count(*) AS "n!" FROM quarantine_items WHERE status = 'held' GROUP BY kind"#
+            r#"SELECT kind, count(*) AS "n!" FROM quarantine_items
+               WHERE status = 'held' AND ($1::text IS NULL OR split_part(recipient, '@', 2) = $1)
+               GROUP BY kind"#,
+            domain
         )
         .fetch_all(&self.pool)
         .await?;

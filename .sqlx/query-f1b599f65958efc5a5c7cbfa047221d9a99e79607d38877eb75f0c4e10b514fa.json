@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO mail_sync_state (mailbox_id, folder, uid_validity, last_uid)\n               VALUES ($1, $2, $3, $4)\n               ON CONFLICT (mailbox_id, folder) DO UPDATE\n               SET uid_validity = EXCLUDED.uid_validity, last_uid = EXCLUDED.last_uid,\n                   synced_at = now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f1b599f65958efc5a5c7cbfa047221d9a99e79607d38877eb75f0c4e10b514fa"
+}

@@ -34,8 +34,18 @@ pub struct SyncReport {
 
 /// Turns a list summary into an index row.
 #[must_use]
-pub fn indexed(folder: &str, uid_validity: u32, summary: &MessageSummary, snippet_text: String) -> IndexedMessage {
-    let join = |list: &[crate::message::Address]| list.iter().map(|a| a.display()).collect::<Vec<_>>().join(", ");
+pub fn indexed(
+    folder: &str,
+    uid_validity: u32,
+    summary: &MessageSummary,
+    snippet_text: String,
+) -> IndexedMessage {
+    let join = |list: &[crate::message::Address]| {
+        list.iter()
+            .map(|a| a.display())
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
     IndexedMessage {
         folder: folder.to_owned(),
         uid_validity: i64::from(uid_validity),
@@ -43,7 +53,11 @@ pub fn indexed(folder: &str, uid_validity: u32, summary: &MessageSummary, snippe
         message_id: summary.message_id.clone(),
         in_reply_to: summary.in_reply_to.clone(),
         subject: summary.subject.clone(),
-        from_addr: summary.from.as_ref().map(|a| a.display()).unwrap_or_default(),
+        from_addr: summary
+            .from
+            .as_ref()
+            .map(|a| a.display())
+            .unwrap_or_default(),
         to_addrs: join(&summary.to),
         cc_addrs: join(&summary.cc),
         snippet: snippet_text,
@@ -69,7 +83,9 @@ pub async fn sync_folder(
 ) -> MailResult<(usize, bool)> {
     let (validity, _next, _exists) = session.folder_state(folder).await?;
     let mut last_uid = match index.sync_state(mailbox_id, folder).await? {
-        Some(state) if state.uid_validity == i64::from(validity) => u32::try_from(state.last_uid).unwrap_or(0),
+        Some(state) if state.uid_validity == i64::from(validity) => {
+            u32::try_from(state.last_uid).unwrap_or(0)
+        }
         Some(_) => {
             // The server renumbered the folder: every stored UID now points elsewhere.
             index.clear_folder(mailbox_id, folder).await?;
@@ -79,9 +95,13 @@ pub async fn sync_folder(
     };
     let mut done = 0;
     while done < budget {
-        let batch = session.summaries_after(folder, last_uid, BATCH.min(budget - done)).await?;
+        let batch = session
+            .summaries_after(folder, last_uid, BATCH.min(budget - done))
+            .await?;
         if batch.is_empty() {
-            index.set_sync_state(mailbox_id, folder, i64::from(validity), i64::from(last_uid)).await?;
+            index
+                .set_sync_state(mailbox_id, folder, i64::from(validity), i64::from(last_uid))
+                .await?;
             return Ok((done, true));
         }
         let mut rows = Vec::with_capacity(batch.len());
@@ -101,7 +121,9 @@ pub async fn sync_folder(
         }
         index.upsert(mailbox_id, &rows).await?;
         last_uid = batch.iter().map(|s| s.uid).max().unwrap_or(last_uid);
-        index.set_sync_state(mailbox_id, folder, i64::from(validity), i64::from(last_uid)).await?;
+        index
+            .set_sync_state(mailbox_id, folder, i64::from(validity), i64::from(last_uid))
+            .await?;
         done += batch.len();
     }
     Ok((done, false))
@@ -119,14 +141,25 @@ pub async fn sync_mailbox(
     budget: usize,
 ) -> MailResult<SyncReport> {
     let folders = session.folders().await?;
-    let mut report = SyncReport { complete: true, ..SyncReport::default() };
+    let mut report = SyncReport {
+        complete: true,
+        ..SyncReport::default()
+    };
     let mut left = budget;
     for folder in folders.iter().filter(|f| f.selectable) {
         if left == 0 {
             report.complete = false;
             break;
         }
-        match sync_folder(session, index, mailbox_id, &folder.name, left.min(FOLDER_BUDGET)).await {
+        match sync_folder(
+            session,
+            index,
+            mailbox_id,
+            &folder.name,
+            left.min(FOLDER_BUDGET),
+        )
+        .await
+        {
             Ok((n, caught_up)) => {
                 report.folders += 1;
                 report.messages += n;
@@ -151,9 +184,18 @@ mod tests {
     fn a_summary_becomes_an_index_row() {
         let summary = MessageSummary {
             uid: 9,
-            flags: Flags { seen: true, ..Flags::default() },
-            from: Some(Address { name: Some("Ann".into()), email: "ann@x.co".into() }),
-            to: vec![Address { name: None, email: "bob@x.co".into() }],
+            flags: Flags {
+                seen: true,
+                ..Flags::default()
+            },
+            from: Some(Address {
+                name: Some("Ann".into()),
+                email: "ann@x.co".into(),
+            }),
+            to: vec![Address {
+                name: None,
+                email: "bob@x.co".into(),
+            }],
             cc: vec![],
             subject: "Hi".into(),
             date: None,
@@ -164,7 +206,10 @@ mod tests {
             in_reply_to: None,
         };
         let row = indexed("Work/2024", 77, &summary, "hello".into());
-        assert_eq!((row.folder.as_str(), row.uid_validity, row.imap_uid), ("Work/2024", 77, 9));
+        assert_eq!(
+            (row.folder.as_str(), row.uid_validity, row.imap_uid),
+            ("Work/2024", 77, 9)
+        );
         assert_eq!(row.from_addr, "Ann <ann@x.co>");
         assert_eq!(row.to_addrs, "bob@x.co");
         assert_eq!(row.flags, ["\\Seen"]);

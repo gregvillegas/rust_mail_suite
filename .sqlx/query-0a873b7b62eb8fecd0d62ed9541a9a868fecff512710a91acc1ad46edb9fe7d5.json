@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO messages_meta\n                       (mailbox_id, folder, uid_validity, imap_uid, message_id, in_reply_to, subject,\n                        from_addr, to_addrs, cc_addrs, snippet, size_bytes, flags, has_attachments,\n                        date_header, received_at)\n                   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)\n                   ON CONFLICT (mailbox_id, folder, uid_validity, imap_uid) DO UPDATE SET\n                       message_id = EXCLUDED.message_id, in_reply_to = EXCLUDED.in_reply_to,\n                       subject = EXCLUDED.subject, from_addr = EXCLUDED.from_addr,\n                       to_addrs = EXCLUDED.to_addrs, cc_addrs = EXCLUDED.cc_addrs,\n                       snippet = CASE WHEN EXCLUDED.snippet <> '' THEN EXCLUDED.snippet\n                                      ELSE messages_meta.snippet END,\n                       size_bytes = EXCLUDED.size_bytes, flags = EXCLUDED.flags,\n                       has_attachments = EXCLUDED.has_attachments,\n                       date_header = EXCLUDED.date_header, received_at = EXCLUDED.received_at",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int8",
+        "Int8",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "TextArray",
+        "Bool",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0a873b7b62eb8fecd0d62ed9541a9a868fecff512710a91acc1ad46edb9fe7d5"
+}

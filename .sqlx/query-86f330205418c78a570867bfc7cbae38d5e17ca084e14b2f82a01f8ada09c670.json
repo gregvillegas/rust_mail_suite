@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT count(*) AS \"n!\" FROM audit_log a\n               WHERE ($1::uuid IS NULL\n                      OR (jsonb_exists(a.details, 'domain_id') AND a.details->>'domain_id' = $1::text)\n                      OR (NOT jsonb_exists(a.details, 'domain_id')\n                          AND a.actor_user_id IN (SELECT id FROM users WHERE domain_id = $1 AND role <> 'super_admin')))\n                 AND ($2::text IS NULL OR a.actor_email ILIKE $2)\n                 AND ($3::text IS NULL OR a.action LIKE $3)\n                 AND ($4::text IS NULL OR a.outcome::text = $4)\n                 AND ($5::timestamptz IS NULL OR a.occurred_at >= $5)\n                 AND ($6::timestamptz IS NULL OR a.occurred_at < $6)\n                 AND ($7::text IS NULL OR a.target_id ILIKE $7 OR a.details::text ILIKE $7)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "86f330205418c78a570867bfc7cbae38d5e17ca084e14b2f82a01f8ada09c670"
+}

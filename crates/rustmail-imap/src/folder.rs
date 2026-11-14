@@ -122,7 +122,10 @@ pub fn validate_name(name: &str, delimiter: &str) -> MailResult<()> {
     if name != name.trim() {
         return bad("the folder name must not start or end with spaces");
     }
-    if name.chars().any(|c| c.is_control() || matches!(c, '*' | '%' | '\\' | '"')) {
+    if name
+        .chars()
+        .any(|c| c.is_control() || matches!(c, '*' | '%' | '\\' | '"'))
+    {
         return bad("the folder name contains a character that is not allowed");
     }
     if name.eq_ignore_ascii_case("inbox") {
@@ -151,7 +154,10 @@ mod tests {
             selectable: true,
         };
         assert_eq!((f.leaf(), f.depth()), ("2024", 2));
-        let flat = Folder { delimiter: None, ..f };
+        let flat = Folder {
+            delimiter: None,
+            ..f
+        };
         assert_eq!((flat.leaf(), flat.depth()), ("Work/Projects/2024", 0));
     }
 
@@ -169,8 +175,23 @@ mod tests {
             assert!(validate_name(ok, "/").is_ok(), "{ok}");
         }
         for bad in [
-            "", " ", " x", "x ", "a/", "/a", "a//b", "../x", "a/./b", "a*b", "a%b", "a\\b", "a\"b", "a\r\nb",
-            "INBOX", "inbox", &"x".repeat(MAX_FOLDER_NAME + 1),
+            "",
+            " ",
+            " x",
+            "x ",
+            "a/",
+            "/a",
+            "a//b",
+            "../x",
+            "a/./b",
+            "a*b",
+            "a%b",
+            "a\\b",
+            "a\"b",
+            "a\r\nb",
+            "INBOX",
+            "inbox",
+            &"x".repeat(MAX_FOLDER_NAME + 1),
         ] {
             assert!(validate_name(bad, "/").is_err(), "{bad:?}");
         }

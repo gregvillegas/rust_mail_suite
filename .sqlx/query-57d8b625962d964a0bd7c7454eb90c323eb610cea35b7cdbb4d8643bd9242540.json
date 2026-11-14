@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT uid_validity, last_uid, synced_at FROM mail_sync_state\n             WHERE mailbox_id = $1 AND folder = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "uid_validity",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "last_uid",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "synced_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "57d8b625962d964a0bd7c7454eb90c323eb610cea35b7cdbb4d8643bd9242540"
+}

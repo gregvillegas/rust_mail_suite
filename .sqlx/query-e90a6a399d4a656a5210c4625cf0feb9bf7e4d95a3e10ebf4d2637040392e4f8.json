@@ -1,0 +1,73 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT folder, uid_validity, imap_uid, subject, from_addr, snippet, received_at,\n                      flags, has_attachments\n               FROM messages_meta\n               WHERE mailbox_id = $1 AND search_vector @@ websearch_to_tsquery('simple', $2)\n               ORDER BY ts_rank(search_vector, websearch_to_tsquery('simple', $2)) DESC,\n                        received_at DESC, id DESC\n               LIMIT $3 OFFSET $4",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "folder",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "uid_validity",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "imap_uid",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "subject",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "from_addr",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "snippet",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "received_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "flags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 8,
+        "name": "has_attachments",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e90a6a399d4a656a5210c4625cf0feb9bf7e4d95a3e10ebf4d2637040392e4f8"
+}

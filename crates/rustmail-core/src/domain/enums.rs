@@ -38,6 +38,17 @@ impl UserRole {
         self.level() >= minimum.level()
     }
 
+    /// Parses the stored value (`super_admin`, `domain_admin`, `user`).
+    #[must_use]
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "super_admin" => Some(Self::SuperAdmin),
+            "domain_admin" => Some(Self::DomainAdmin),
+            "user" => Some(Self::User),
+            _ => None,
+        }
+    }
+
     /// The stable snake_case identifier, identical to the database value.
     #[must_use]
     pub fn as_str(self) -> &'static str {
@@ -73,6 +84,17 @@ impl AccountStatus {
     #[must_use]
     pub fn is_active(self) -> bool {
         matches!(self, Self::Active)
+    }
+
+    /// Parses the stored value (`active`, `suspended`, `disabled`).
+    #[must_use]
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "active" => Some(Self::Active),
+            "suspended" => Some(Self::Suspended),
+            "disabled" => Some(Self::Disabled),
+            _ => None,
+        }
     }
 
     /// The stable snake_case identifier, identical to the database value.

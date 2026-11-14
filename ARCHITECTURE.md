@@ -210,3 +210,18 @@ Postfix :10025 (re-entry, no filter) ──► Dovecot LMTP ──► Sieve (X-S
 - The web UI (super admin only) lists, inspects, releases and deletes quarantined messages. Release hands the original back to Postfix's re-entry port, to that one recipient, without rescanning.
 - Training: moving a message into Junk (or out of it, except to Trash) runs `sa-learn` through Dovecot's imapsieve.
 - ClamAV runs in the same container/host as Amavis because Amavis passes clamd a file path.
+
+## 12. Webmail (Phase 6)
+
+```
+Browser ──htmx/Alpine──► rustmail-web ──IMAPS (master login)──► Dovecot ──► Maildir
+   ▲  ▲                      │  │ └──SMTP 587 + STARTTLS (master login)──► Postfix ► Amavis ► delivery
+   │  └── WebSocket "new" ◄──┘  └── search ──► PostgreSQL messages_meta (headers + snippet)
+   └── sandboxed iframe: sanitised HTML, no scripts, remote images off
+```
+
+- **No user passwords.** The web server authenticates to Dovecot and to Postfix as `<user>*<master>`. Dovecot accepts the master login only from `MAIL_MASTER_ALLOW_NETS`. Postfix then applies exactly the rules it applies to that user: the sender must be their own address, and outgoing mail is scanned like any other.
+- **IMAP is the source of truth.** Pages open a short-lived IMAP session per request; nothing is cached except the search index.
+- **Search** is PostgreSQL full-text over `messages_meta`: headers plus a 240-character snippet, filled in the background as people use the mailbox and by `rustmail-cli mail index`. A search hit is a pointer that may be stale if another client moved the message.
+- **Display safety.** Mail is untrusted. HTML goes through `ammonia` (no scripts, styles, forms, frames, handlers; links get `noopener noreferrer`; remote images only on request), is served as its own document with `Content-Security-Policy: sandbox; default-src 'none'`, and is shown in an `<iframe sandbox>` without `allow-scripts` or `allow-same-origin`. Attachments are always downloads, with a sandbox CSP and a short allow-list of content types.
+- **New mail** is pushed over a WebSocket backed by IMAP IDLE. The upgrade requires the session cookie and a matching `Origin`; sockets are limited per user and in total. The list also polls every minute.

@@ -109,6 +109,12 @@ Incoming mail is also scanned (ClamAV, SpamAssassin). Viruses and very high spam
 Thresholds are set with `rustmail-cli policy set @example.com --quarantine-level 15`. Without a download, ClamAV only knows a built-in
 EICAR test signature; set `CLAMAV_UPDATE=1` in `deploy/dev/mta.env` to fetch the real signature database (needs the internet, ~300 MB).
 
+### Webmail (Phase 6)
+
+With the mail stack running and `MAIL_MASTER_PASSWORD` set (the dev values are in `.env.example`), `make run-web` serves webmail at <http://127.0.0.1:8080/mail>:
+three-pane inbox, reply/forward, attachments, folders, search, spam training and keyboard shortcuts (press `?`).
+`make webmail-smoke` drives all of it in a real browser; `make mail-index USER=alice@example.test` builds the search index up front.
+
 For a real host, copy `deploy/mta.env.example` to `/etc/rustmail/mta.env` and run `sudo scripts/setup-mta.sh`.
 With `COOKIE_SECURE=false` in `.env` (the example default) cookies work over plain
 HTTP on localhost; leave it `true` anywhere else.

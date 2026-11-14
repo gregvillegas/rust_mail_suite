@@ -9,7 +9,9 @@ use tokio_rustls::client::TlsStream;
 use tokio_rustls::rustls::client::danger::{
     HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier,
 };
-use tokio_rustls::rustls::crypto::{ring, verify_tls12_signature, verify_tls13_signature, CryptoProvider};
+use tokio_rustls::rustls::crypto::{
+    ring, verify_tls12_signature, verify_tls13_signature, CryptoProvider,
+};
 use tokio_rustls::rustls::pki_types::pem::PemObject;
 use tokio_rustls::rustls::pki_types::{CertificateDer, ServerName, UnixTime};
 use tokio_rustls::rustls::{ClientConfig, DigitallySignedStruct, RootCertStore, SignatureScheme};
@@ -43,7 +45,12 @@ impl ServerCertVerifier for AcceptAnyCertificate {
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, tokio_rustls::rustls::Error> {
-        verify_tls12_signature(message, cert, dss, &self.0.signature_verification_algorithms)
+        verify_tls12_signature(
+            message,
+            cert,
+            dss,
+            &self.0.signature_verification_algorithms,
+        )
     }
 
     fn verify_tls13_signature(
@@ -52,7 +59,12 @@ impl ServerCertVerifier for AcceptAnyCertificate {
         cert: &CertificateDer<'_>,
         dss: &DigitallySignedStruct,
     ) -> Result<HandshakeSignatureValid, tokio_rustls::rustls::Error> {
-        verify_tls13_signature(message, cert, dss, &self.0.signature_verification_algorithms)
+        verify_tls13_signature(
+            message,
+            cert,
+            dss,
+            &self.0.signature_verification_algorithms,
+        )
     }
 
     fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
@@ -82,14 +94,19 @@ pub fn connector(config: &MailConfig) -> MailResult<TlsConnector> {
                 for cert in CertificateDer::pem_file_iter(path)
                     .map_err(|e| MailError::Tls(format!("cannot read {}: {e}", path.display())))?
                 {
-                    let cert = cert.map_err(|e| MailError::Tls(format!("bad certificate in {}: {e}", path.display())))?;
-                    roots
-                        .add(cert)
-                        .map_err(|e| MailError::Tls(format!("unusable certificate in {}: {e}", path.display())))?;
+                    let cert = cert.map_err(|e| {
+                        MailError::Tls(format!("bad certificate in {}: {e}", path.display()))
+                    })?;
+                    roots.add(cert).map_err(|e| {
+                        MailError::Tls(format!("unusable certificate in {}: {e}", path.display()))
+                    })?;
                     added += 1;
                 }
                 if added == 0 {
-                    return Err(MailError::Tls(format!("{} contains no certificate", path.display())));
+                    return Err(MailError::Tls(format!(
+                        "{} contains no certificate",
+                        path.display()
+                    )));
                 }
             }
             builder.with_root_certificates(roots).with_no_client_auth()
@@ -114,7 +131,11 @@ pub async fn tcp(host: &str, port: u16) -> MailResult<TcpStream> {
 ///
 /// # Errors
 /// [`MailError::Tls`] if the name is invalid, the handshake fails, or it times out.
-pub async fn upgrade(config: &MailConfig, host: &str, stream: TcpStream) -> MailResult<TlsStream<TcpStream>> {
+pub async fn upgrade(
+    config: &MailConfig,
+    host: &str,
+    stream: TcpStream,
+) -> MailResult<TlsStream<TcpStream>> {
     let name = ServerName::try_from(config.server_name(host).to_owned())
         .map_err(|_| MailError::Tls("the certificate name is not valid".into()))?;
     timeout(CONNECT_TIMEOUT, connector(config)?.connect(name, stream))
@@ -127,7 +148,11 @@ pub async fn upgrade(config: &MailConfig, host: &str, stream: TcpStream) -> Mail
 ///
 /// # Errors
 /// See [`tcp`] and [`upgrade`].
-pub async fn connect(config: &MailConfig, host: &str, port: u16) -> MailResult<TlsStream<TcpStream>> {
+pub async fn connect(
+    config: &MailConfig,
+    host: &str,
+    port: u16,
+) -> MailResult<TlsStream<TcpStream>> {
     upgrade(config, host, tcp(host, port).await?).await
 }
 
@@ -157,13 +182,17 @@ mod tests {
 
     #[test]
     fn a_missing_or_empty_ca_file_is_an_error_not_a_silent_fallback() {
-        let missing = TlsMode::Verify { ca_file: Some("/nonexistent/ca.pem".into()) };
+        let missing = TlsMode::Verify {
+            ca_file: Some("/nonexistent/ca.pem".into()),
+        };
         assert!(connector(&config(missing)).is_err());
         let dir = std::env::temp_dir().join(format!("rustmail-tls-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let empty = dir.join("empty.pem");
         std::fs::write(&empty, "not a certificate\n").unwrap();
-        let result = connector(&config(TlsMode::Verify { ca_file: Some(empty) }));
+        let result = connector(&config(TlsMode::Verify {
+            ca_file: Some(empty),
+        }));
         std::fs::remove_dir_all(&dir).unwrap();
         assert!(result.is_err());
     }

@@ -1,0 +1,84 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("admin-quota") }}{% endblock %}
+{% block admin_content %}
+<h1 class="h3 mb-3">{{ ctx.t("admin-quota") }}</h1>
+<div class="row g-3 mb-4">
+  <div class="col-sm-6 col-xl-4"><div class="card h-100"><div class="card-body">
+    <div class="text-body-secondary small">{{ ctx.t("admin-quota-total-used") }}</div>
+    <div class="rm-stat" data-testid="quota-total-used">{{ total_used }}</div>
+  </div></div></div>
+  <div class="col-sm-6 col-xl-4"><div class="card h-100"><div class="card-body">
+    <div class="text-body-secondary small">{{ ctx.t("admin-quota-mailboxes") }}</div>
+    <div class="rm-stat">{{ total_mailboxes }}</div>
+  </div></div></div>
+</div>
+<div x-data="quotaCharts" data-url="/admin/quota/data" data-chart-src="{{ chart_script }}"
+     data-label-used="{{ ctx.t("admin-quota-label-used") }}" data-label-limit="{{ ctx.t("admin-quota-label-limit") }}" data-label-percent="{{ ctx.t("admin-quota-label-percent") }}">
+  <div class="alert alert-warning" role="alert" x-show="failed" x-cloak>{{ ctx.t("admin-quota-chart-failed") }}</div>
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <h2 class="h5" id="chart-domains-title">{{ ctx.t("admin-quota-by-domain") }}</h2>
+      <div class="rm-chart"><canvas id="chart-domains" role="img" aria-labelledby="chart-domains-title">{{ ctx.t("admin-quota-chart-fallback") }}</canvas></div>
+    </div>
+    <div class="col-lg-6">
+      <h2 class="h5" id="chart-top-title">{{ ctx.t("admin-quota-top") }}</h2>
+      <div class="rm-chart"><canvas id="chart-top" role="img" aria-labelledby="chart-top-title">{{ ctx.t("admin-quota-chart-fallback") }}</canvas></div>
+    </div>
+  </div>
+</div>
+
+<h2 class="h5">{{ ctx.t("admin-quota-by-domain") }}</h2>
+{% if domains.is_empty() %}
+<p>{{ ctx.t("admin-domains-empty") }}</p>
+{% else %}
+<div class="table-responsive mb-4">
+  <table class="table table-sm align-middle">
+    <thead><tr>
+      <th scope="col">{{ ctx.t("admin-col-domain") }}</th>
+      <th scope="col" class="text-end">{{ ctx.t("admin-quota-mailboxes") }}</th>
+      <th scope="col" class="text-end">{{ ctx.t("admin-col-used") }}</th>
+      <th scope="col" class="text-end">{{ ctx.t("admin-col-quota") }}</th>
+      <th scope="col" class="text-end">{{ ctx.t("admin-quota-unlimited-mailboxes") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for d in domains %}
+      <tr><th scope="row">{{ d.domain }}</th><td class="text-end">{{ d.mailboxes }}</td><td class="text-end">{{ d.used }}</td><td class="text-end">{{ d.limited }}</td><td class="text-end">{{ d.unlimited }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<h2 class="h5">{{ ctx.t("admin-quota-near") }}</h2>
+{% if near.is_empty() %}
+<p>{{ ctx.t("admin-quota-near-none") }}</p>
+{% else %}
+<ul class="list-group mb-4 rm-w-60" data-testid="quota-near">
+  {% for m in near %}
+  <li class="list-group-item d-flex justify-content-between"><a href="/admin/users/{{ m.user_id }}">{{ m.email }}</a><span>{{ m.used }} / {{ m.quota }}{% if let Some(p) = m.percent %} <span class="badge text-bg-{{ m.bar_class }}">{{ p }}%</span>{% endif %}</span></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+<h2 class="h5">{{ ctx.t("admin-quota-top") }}</h2>
+{% if top.is_empty() %}
+<p>{{ ctx.t("admin-users-empty") }}</p>
+{% else %}
+<div class="table-responsive">
+  <table class="table table-sm align-middle" data-testid="quota-top">
+    <thead><tr>
+      <th scope="col">{{ ctx.t("admin-col-email") }}</th>
+      <th scope="col" class="text-end">{{ ctx.t("admin-col-used") }}</th>
+      <th scope="col" class="text-end">{{ ctx.t("admin-col-quota") }}</th>
+      <th scope="col" class="text-end">%</th>
+      <th scope="col" class="text-end">{{ ctx.t("admin-field-messages") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for m in top %}
+      <tr><th scope="row" class="text-break"><a href="/admin/users/{{ m.user_id }}">{{ m.email }}</a></th><td class="text-end">{{ m.used }}</td><td class="text-end">{{ m.quota }}</td><td class="text-end">{% if let Some(p) = m.percent %}{{ p }}%{% else %}–{% endif %}</td><td class="text-end">{{ m.messages }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.t("nav-mail") }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-2" x-data="mailKeys" @keydown.window="onKey">
+  {% if let Some(n) = notice %}
+  <div class="alert alert-{{ n.class }} py-2 mb-2" role="status">{{ ctx.t(n.key) }}</div>
+  {% endif %}
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+    <a class="btn btn-primary btn-sm" href="/mail/compose" data-action="compose">{{ ctx.t("mail-compose") }}</a>
+    <form class="d-flex flex-grow-1 rm-mail-search" method="get" action="/mail" role="search">
+      <input type="hidden" name="folder" value="{{ list.folder_name }}">
+      <label class="visually-hidden" for="mail-search">{{ ctx.t("mail-search-label") }}</label>
+      <input id="mail-search" class="form-control form-control-sm me-2" type="search" name="q" value="{{ list.search }}" maxlength="200" placeholder="{{ ctx.t("mail-search-placeholder") }}" autocomplete="off">
+      <button class="btn btn-outline-secondary btn-sm" type="submit">{{ ctx.t("mail-search-button") }}</button>
+    </form>
+    <button type="button" class="btn btn-link btn-sm" @click="toggleHelp" :aria-expanded="helpOpen">{{ ctx.t("mail-shortcuts") }}</button>
+  </div>
+  <div id="mail-help" class="alert alert-secondary small" hidden>
+    <strong>{{ ctx.t("mail-shortcuts") }}</strong>
+    <ul class="mb-0">
+      <li><kbd>j</kbd> / <kbd>k</kbd> {{ ctx.t("mail-key-move") }}</li>
+      <li><kbd>o</kbd> / <kbd>Enter</kbd> {{ ctx.t("mail-key-open") }}</li>
+      <li><kbd>c</kbd> {{ ctx.t("mail-key-compose") }}, <kbd>r</kbd> {{ ctx.t("mail-key-reply") }}, <kbd>a</kbd> {{ ctx.t("mail-key-reply-all") }}, <kbd>f</kbd> {{ ctx.t("mail-key-forward") }}</li>
+      <li><kbd>#</kbd> {{ ctx.t("mail-key-delete") }}, <kbd>s</kbd> {{ ctx.t("mail-key-star") }}, <kbd>!</kbd> {{ ctx.t("mail-key-spam") }}</li>
+      <li><kbd>/</kbd> {{ ctx.t("mail-key-search") }}, <kbd>g</kbd> <kbd>i</kbd> {{ ctx.t("mail-key-inbox") }}, <kbd>?</kbd> {{ ctx.t("mail-key-help") }}</li>
+    </ul>
+  </div>
+  <div class="rm-mail border rounded">
+    <nav id="mail-folders" class="rm-mail-pane" aria-label="{{ ctx.t("mail-folders") }}"
+         hx-get="/mail/folders/nav?folder={{ folder_enc }}" hx-trigger="mail-refresh from:body" hx-swap="innerHTML">
+      {% include "mail/_folders.html" %}
+    </nav>
+    <section id="mail-list" class="rm-mail-pane" aria-label="{{ ctx.t("mail-messages") }}" data-live="1"
+             hx-get="{{ list.refresh_url }}" hx-trigger="every 60s, mail-refresh from:body" hx-swap="innerHTML">
+      {% include "mail/_list.html" %}
+    </section>
+    <section id="mail-preview" class="rm-mail-pane" aria-label="{{ ctx.t("mail-message") }}" tabindex="-1">
+      {% include "mail/_preview.html" %}
+    </section>
+  </div>
+</div>
+{% endblock %}

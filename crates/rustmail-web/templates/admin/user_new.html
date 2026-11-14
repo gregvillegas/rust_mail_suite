@@ -1,0 +1,44 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("admin-user-new") }}{% endblock %}
+{% block admin_content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/admin/users">{{ ctx.t("admin-users") }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ ctx.t("admin-user-new") }}</li></ol></nav>
+<h1 class="h3 mb-3">{{ ctx.t("admin-user-new") }}</h1>
+{% if domains.is_empty() %}
+<div class="alert alert-warning" role="alert">{{ ctx.t("admin-need-domain") }}</div>
+{% else %}
+<form id="user-new-form" hx-post="/admin/users" hx-target="#form-status" hx-swap="innerHTML" hx-boost="false" hx-disabled-elt="#user-new-submit" class="row g-3 rm-w-50">
+  <div class="col-md-6">
+    <label for="n-local" class="form-label">{{ ctx.t("admin-field-local-part") }}</label>
+    <input id="n-local" name="local_part" class="form-control" required maxlength="64" autocomplete="off" autocapitalize="none" spellcheck="false">
+  </div>
+  <div class="col-md-6">
+    <label for="n-domain" class="form-label">{{ ctx.t("admin-col-domain") }}</label>
+    <select id="n-domain" name="domain" class="form-select">
+      {% for o in domains %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>@{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-6">
+    <label for="n-name" class="form-label">{{ ctx.t("admin-col-name") }}</label>
+    <input id="n-name" name="name" class="form-control" maxlength="200" autocomplete="off">
+  </div>
+  <div class="col-md-6">
+    <label for="n-role" class="form-label">{{ ctx.t("admin-col-role") }}</label>
+    <select id="n-role" name="role" class="form-select">
+      {% for o in roles %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-md-6">
+    <label for="n-quota" class="form-label">{{ ctx.t("admin-field-quota-mb") }}</label>
+    <input id="n-quota" name="quota_mb" class="form-control" inputmode="numeric" autocomplete="off" aria-describedby="n-quota-help">
+    <div id="n-quota-help" class="form-text">{{ ctx.t("admin-field-quota-help") }}</div>
+  </div>
+  <div class="col-md-6">
+    <label for="n-password" class="form-label">{{ ctx.t("admin-field-password") }}</label>
+    <input id="n-password" name="password" type="password" class="form-control" autocomplete="new-password" aria-describedby="n-password-help">
+    <div id="n-password-help" class="form-text">{{ ctx.t("admin-field-password-help") }}</div>
+  </div>
+  <div class="col-12"><button id="user-new-submit" type="submit" class="btn btn-primary">{{ ctx.t("admin-create") }}</button></div>
+  <div class="col-12" id="form-status" aria-live="polite"></div>
+</form>
+{% endif %}
+{% endblock %}

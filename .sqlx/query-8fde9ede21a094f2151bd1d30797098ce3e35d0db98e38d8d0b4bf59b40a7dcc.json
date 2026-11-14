@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT kind, count(*) AS \"n!\" FROM quarantine_items WHERE status = 'held' GROUP BY kind",
+  "query": "SELECT kind, count(*) AS \"n!\" FROM quarantine_items\n               WHERE status = 'held' AND ($1::text IS NULL OR split_part(recipient, '@', 2) = $1)\n               GROUP BY kind",
   "describe": {
     "columns": [
       {
@@ -15,12 +15,14 @@
       }
     ],
     "parameters": {
-      "Left": []
+      "Left": [
+        "Text"
+      ]
     },
     "nullable": [
       false,
       null
     ]
   },
-  "hash": "5de418e8b9f263b08113616e8b9aea46d671c9675f849b00a6a328b2cbfe185f"
+  "hash": "8fde9ede21a094f2151bd1d30797098ce3e35d0db98e38d8d0b4bf59b40a7dcc"
 }

@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT x AS \"x!\" FROM (\n                   SELECT email AS x FROM users WHERE email = ANY($1)\n                   UNION SELECT address FROM aliases WHERE address = ANY($1)\n                   UNION SELECT address FROM groups WHERE address = ANY($1) AND address IS NOT NULL) t",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "x!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "9e2edf0ef8e1dfb6d762d00a68c534ab3266a39c40d0d9cec597e61b4bb32f92"
+}

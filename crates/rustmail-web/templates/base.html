@@ -17,6 +17,8 @@
   <link rel="stylesheet" href="{{ css.href }}" data-lib="bootstrap"{% if let Some(hash) = css.integrity %} integrity="{{ hash }}" crossorigin="anonymous"{% endif %}{% if let Some(local) = css.fallback %} data-fallback="{{ local }}"{% endif %}>
   <link rel="stylesheet" href="{{ ctx.assets.url("css/app.css") }}">
   <script defer src="{{ ctx.assets.url("js/app.js") }}"></script>
+  <script defer src="{{ ctx.assets.url("js/mail.js") }}"></script>
+  <script defer src="{{ ctx.assets.url("js/admin.js") }}"></script>
   {% let htmx = ctx.assets.htmx() -%}
   <script defer src="{{ htmx.href }}" data-lib="htmx"{% if let Some(hash) = htmx.integrity %} integrity="{{ hash }}" crossorigin="anonymous"{% endif %}{% if let Some(local) = htmx.fallback %} data-fallback="{{ local }}"{% endif %}></script>
   {% let alpine = ctx.assets.alpine() -%}

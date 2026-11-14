@@ -18,7 +18,11 @@ fn flush(units: &mut Vec<u16>, out: &mut String) {
     let bytes: Vec<u8> = units.iter().flat_map(|u| u.to_be_bytes()).collect();
     out.push('&');
     for chunk in bytes.chunks(3) {
-        let b = [chunk[0], chunk.get(1).copied().unwrap_or(0), chunk.get(2).copied().unwrap_or(0)];
+        let b = [
+            chunk[0],
+            chunk.get(1).copied().unwrap_or(0),
+            chunk.get(2).copied().unwrap_or(0),
+        ];
         let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
         // 1 byte -> 2 characters, 2 bytes -> 3, 3 bytes -> 4 (no padding).
         for i in 0..=chunk.len() {
@@ -89,10 +93,13 @@ pub fn decode(wire: &str) -> Option<String> {
             }
         }
         // Leftover bits must be zero padding, and the data whole UTF-16 units.
-        if acc & ((1 << bits) - 1) != 0 || raw.len() % 2 != 0 {
+        if acc & ((1 << bits) - 1) != 0 || !raw.len().is_multiple_of(2) {
             return None;
         }
-        let units: Vec<u16> = raw.chunks(2).map(|p| u16::from_be_bytes([p[0], p[1]])).collect();
+        let units: Vec<u16> = raw
+            .chunks(2)
+            .map(|p| u16::from_be_bytes([p[0], p[1]]))
+            .collect();
         for decoded in char::decode_utf16(units) {
             let c = decoded.ok()?;
             // A shifted run must not spell characters that could have been direct.
@@ -119,8 +126,14 @@ mod tests {
     #[test]
     fn rfc_3501_examples() {
         // From RFC 3501 section 5.1.3.
-        assert_eq!(encode("~peter/mail/台北/日本語"), "~peter/mail/&U,BTFw-/&ZeVnLIqe-");
-        assert_eq!(decode("~peter/mail/&U,BTFw-/&ZeVnLIqe-").as_deref(), Some("~peter/mail/台北/日本語"));
+        assert_eq!(
+            encode("~peter/mail/台北/日本語"),
+            "~peter/mail/&U,BTFw-/&ZeVnLIqe-"
+        );
+        assert_eq!(
+            decode("~peter/mail/&U,BTFw-/&ZeVnLIqe-").as_deref(),
+            Some("~peter/mail/台北/日本語")
+        );
     }
 
     #[test]
@@ -138,14 +151,34 @@ mod tests {
 
     #[test]
     fn round_trips() {
-        for name in ["", "a", "&", "&&", "ü", "üü", "üüü", "aüb&c€d", "日本語/テスト", "Trash/ünder & ö"] {
+        for name in [
+            "",
+            "a",
+            "&",
+            "&&",
+            "ü",
+            "üü",
+            "üüü",
+            "aüb&c€d",
+            "日本語/テスト",
+            "Trash/ünder & ö",
+        ] {
             assert_eq!(decode(&encode(name)).as_deref(), Some(name), "{name:?}");
         }
     }
 
     #[test]
     fn malformed_input_is_rejected_not_guessed() {
-        for bad in ["&", "&APw", "&AP-", "&!!!-", "&APx-x\u{e9}", "caf\u{e9}", "&AAA-", "&QQ-"] {
+        for bad in [
+            "&",
+            "&APw",
+            "&AP-",
+            "&!!!-",
+            "&APx-x\u{e9}",
+            "caf\u{e9}",
+            "&AAA-",
+            "&QQ-",
+        ] {
             assert_eq!(decode(bad), None, "{bad:?}");
         }
     }

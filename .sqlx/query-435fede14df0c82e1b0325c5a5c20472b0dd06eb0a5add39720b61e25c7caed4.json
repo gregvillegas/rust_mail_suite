@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM mail_sync_state WHERE mailbox_id = $1 AND folder = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "435fede14df0c82e1b0325c5a5c20472b0dd06eb0a5add39720b61e25c7caed4"
+}

@@ -1,0 +1,61 @@
+{% extends "admin/layout.html" %}
+{% block title %}{{ ctx.t("admin-domains") }}{% endblock %}
+{% block admin_content %}
+<h1 class="h3 mb-3">{{ ctx.t("admin-domains") }}</h1>
+{% if let Some((class, key)) = notice %}
+<div class="alert alert-{{ class }}" role="status">{{ ctx.t(key) }}</div>
+{% endif %}
+{% if rows.is_empty() %}
+<p>{{ ctx.t("admin-domains-empty") }}</p>
+{% else %}
+<div class="table-responsive mb-4">
+  <table class="table table-sm align-middle">
+    <thead>
+      <tr>
+        <th scope="col">{{ ctx.t("admin-col-domain") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-status") }}</th>
+        <th scope="col" class="text-end">{{ ctx.t("admin-col-users") }}</th>
+        <th scope="col" class="text-end">{{ ctx.t("admin-col-aliases") }}</th>
+        <th scope="col" class="text-end">{{ ctx.t("admin-col-groups") }}</th>
+        <th scope="col" class="text-end">{{ ctx.t("admin-col-used") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-default-quota") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-max-mailboxes") }}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <th scope="row"><a href="/admin/domains/{{ row.id }}">{{ row.name }}</a></th>
+        <td><span class="badge text-bg-{{ row.status_class }}">{{ ctx.t(row.status_key) }}</span></td>
+        <td class="text-end">{{ row.users }}</td>
+        <td class="text-end">{{ row.aliases }}</td>
+        <td class="text-end">{{ row.groups }}</td>
+        <td class="text-end text-nowrap">{{ row.used }}</td>
+        <td class="text-nowrap">{{ row.quota }}</td>
+        <td>{{ row.max }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% if can_create %}
+<h2 class="h5">{{ ctx.t("admin-domain-new") }}</h2>
+<form hx-post="/admin/domains" hx-target="#domain-new-status" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end rm-w-60">
+  <div class="col-md-4">
+    <label for="d-name" class="form-label">{{ ctx.t("admin-field-domain-name") }}</label>
+    <input id="d-name" name="name" class="form-control" required maxlength="253" autocomplete="off" placeholder="example.org">
+  </div>
+  <div class="col-md-3">
+    <label for="d-quota" class="form-label">{{ ctx.t("admin-field-quota-mb") }}</label>
+    <input id="d-quota" name="quota_mb" class="form-control" inputmode="numeric" autocomplete="off">
+  </div>
+  <div class="col-md-3">
+    <label for="d-max" class="form-label">{{ ctx.t("admin-field-max-mailboxes") }}</label>
+    <input id="d-max" name="max_mailboxes" class="form-control" inputmode="numeric" autocomplete="off">
+  </div>
+  <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-create") }}</button></div>
+  <div class="col-12" id="domain-new-status" aria-live="polite"></div>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,63 @@
+{% if let Some(p) = preview %}
+<article class="p-3" data-open-uid="{{ p.uid }}">
+  <div class="d-flex flex-wrap gap-2 mb-3" role="toolbar" aria-label="{{ ctx.t("mail-actions") }}">
+    <a class="btn btn-outline-primary btn-sm" href="{{ p.reply_url }}" data-action="reply">{{ ctx.t("mail-reply") }}</a>
+    <a class="btn btn-outline-primary btn-sm" href="{{ p.reply_all_url }}" data-action="reply-all">{{ ctx.t("mail-reply-all") }}</a>
+    <a class="btn btn-outline-primary btn-sm" href="{{ p.forward_url }}" data-action="forward">{{ ctx.t("mail-forward") }}</a>
+    <form class="d-inline" hx-post="/mail/message/{{ p.uid }}/delete" hx-target="#mail-preview" hx-swap="innerHTML" hx-boost="false">
+      <input type="hidden" name="folder" value="{{ p.folder_name }}">
+      <button type="submit" class="btn btn-outline-danger btn-sm" data-action="delete">{{ ctx.t("mail-delete") }}</button>
+    </form>
+    <form class="d-inline" hx-post="/mail/message/{{ p.uid }}/spam" hx-target="#mail-preview" hx-swap="innerHTML" hx-boost="false">
+      <input type="hidden" name="folder" value="{{ p.folder_name }}">
+      <button type="submit" class="btn btn-outline-secondary btn-sm" data-action="spam">{% if p.in_junk %}{{ ctx.t("mail-not-spam") }}{% else %}{{ ctx.t("mail-spam") }}{% endif %}</button>
+    </form>
+    <form class="d-inline" hx-post="/mail/message/{{ p.uid }}/flag" hx-target="#mail-preview" hx-swap="innerHTML" hx-boost="false">
+      <input type="hidden" name="folder" value="{{ p.folder_name }}">
+      <input type="hidden" name="flag" value="{% if p.starred %}unstar{% else %}star{% endif %}">
+      <button type="submit" class="btn btn-outline-secondary btn-sm" data-action="star">{% if p.starred %}{{ ctx.t("mail-unstar") }}{% else %}{{ ctx.t("mail-star") }}{% endif %}</button>
+    </form>
+    <form class="d-inline" hx-post="/mail/message/{{ p.uid }}/flag" hx-target="#mail-preview" hx-swap="innerHTML" hx-boost="false">
+      <input type="hidden" name="folder" value="{{ p.folder_name }}">
+      <input type="hidden" name="flag" value="unseen">
+      <button type="submit" class="btn btn-outline-secondary btn-sm">{{ ctx.t("mail-mark-unread") }}</button>
+    </form>
+    <form class="d-inline-flex gap-1" hx-post="/mail/message/{{ p.uid }}/move" hx-target="#mail-preview" hx-swap="innerHTML" hx-boost="false">
+      <input type="hidden" name="folder" value="{{ p.folder_name }}">
+      <label class="visually-hidden" for="move-target">{{ ctx.t("mail-move-to") }}</label>
+      <select id="move-target" class="form-select form-select-sm" name="target">
+        {% for target in p.move_targets %}<option value="{{ target.0 }}">{{ target.1 }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-outline-secondary btn-sm">{{ ctx.t("mail-move") }}</button>
+    </form>
+  </div>
+  <h1 class="h5">{{ p.subject }}</h1>
+  <dl class="row small mb-3">
+    <dt class="col-sm-2">{{ ctx.t("mail-from") }}</dt><dd class="col-sm-10 text-break">{{ p.from }}</dd>
+    <dt class="col-sm-2">{{ ctx.t("mail-to") }}</dt><dd class="col-sm-10 text-break">{{ p.to }}</dd>
+    {% if !p.cc.is_empty() %}<dt class="col-sm-2">{{ ctx.t("mail-cc") }}</dt><dd class="col-sm-10 text-break">{{ p.cc }}</dd>{% endif %}
+    <dt class="col-sm-2">{{ ctx.t("mail-date") }}</dt><dd class="col-sm-10"><time datetime="{{ p.iso }}">{{ p.when }}</time></dd>
+  </dl>
+  {% if !p.attachments.is_empty() %}
+  <h2 class="h6">{{ ctx.t("mail-attachments") }}</h2>
+  <ul class="list-unstyled small">
+    {% for a in p.attachments %}<li><a href="{{ a.url }}" download hx-boost="false">{{ a.name }}</a> <span class="text-body-secondary">({{ a.size }})</span></li>{% endfor %}
+  </ul>
+  {% endif %}
+  {% if p.images_blocked %}
+  <div class="alert alert-warning py-2 small d-flex flex-wrap gap-2 align-items-center" role="status">
+    <span>{{ ctx.t("mail-images-blocked") }}</span>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ p.load_images_url }}" hx-get="{{ p.load_images_url }}" hx-target="#mail-preview" hx-swap="innerHTML" hx-boost="false">{{ ctx.t("mail-load-images") }}</a>
+  </div>
+  {% endif %}
+  {% if let Some(src) = p.html_url %}
+  <iframe class="rm-mail-frame" src="{{ src }}" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" title="{{ ctx.t("mail-message-body") }}"></iframe>
+  <p class="small mt-1"><a href="{{ p.text_url }}" hx-get="{{ p.text_url }}" hx-target="#mail-preview" hx-swap="innerHTML" hx-boost="false">{{ ctx.t("mail-show-text") }}</a></p>
+  {% else %}
+  <pre class="rm-message-text border rounded p-3 bg-body-tertiary">{{ p.text }}</pre>
+  {% if p.showing_text_of_html %}<p class="small"><a href="{{ p.html_toggle_url }}" hx-get="{{ p.html_toggle_url }}" hx-target="#mail-preview" hx-swap="innerHTML" hx-boost="false">{{ ctx.t("mail-show-html") }}</a></p>{% endif %}
+  {% endif %}
+</article>
+{% else %}
+<p class="p-4 text-body-secondary mb-0">{{ ctx.t("mail-select-message") }}</p>
+{% endif %}

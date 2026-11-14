@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.t("nav-mail") }}{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <h1 class="h3">{{ ctx.t("nav-mail") }}</h1>
+  <div class="alert alert-warning" role="alert">{{ ctx.t("mail-not-configured") }}</div>
+</div>
+{% endblock %}

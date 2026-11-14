@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT count(*) AS \"n!\" FROM messages_meta\n               WHERE mailbox_id = $1 AND search_vector @@ websearch_to_tsquery('simple', $2)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "n!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "3c7f1bfcb657bc28338d5a68eb7253aa64781879091302774aa81904fe19f54e"
+}

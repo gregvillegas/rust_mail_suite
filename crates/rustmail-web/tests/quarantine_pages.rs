@@ -290,7 +290,7 @@ fn smtp_sink() -> (String, JoinHandle<String>) {
 // ─── access control ─────────────────────────────────────────────────────────
 
 #[sqlx::test(migrations = "../../migrations")]
-async fn only_super_administrators_may_use_the_quarantine(pool: PgPool) {
+async fn plain_users_may_not_use_the_quarantine(pool: PgPool) {
     let dir = Scratch::new();
     hold(&pool, &dir, &[event("m1", "a@example.com", "spam-1", None)]).await;
     let id = first_item_id(&pool).await;
@@ -311,7 +311,7 @@ async fn only_super_administrators_may_use_the_quarantine(pool: PgPool) {
         );
     }
 
-    for local in ["alice", "dana"] {
+    for local in ["alice"] {
         let creds = sign_in(&server, local).await;
         for path in [
             "/admin/quarantine".to_owned(),
@@ -333,6 +333,67 @@ async fn only_super_administrators_may_use_the_quarantine(pool: PgPool) {
             .await
             .unwrap();
     assert_eq!(held, 1, "nothing changed");
+}
+
+#[sqlx::test(migrations = "../../migrations")]
+async fn domain_administrators_see_only_their_own_domain(pool: PgPool) {
+    let dir = Scratch::new();
+    hold(
+        &pool,
+        &dir,
+        &[
+            event("m1", "a@example.com", "spam-1", None),
+            event("m2", "b@other.org", "spam-2", None),
+        ],
+    )
+    .await;
+    let own: uuid::Uuid =
+        sqlx::query_scalar("SELECT id FROM quarantine_items WHERE recipient = 'a@example.com'")
+            .fetch_one(&pool)
+            .await
+            .expect("own item");
+    let foreign: uuid::Uuid =
+        sqlx::query_scalar("SELECT id FROM quarantine_items WHERE recipient = 'b@other.org'")
+            .fetch_one(&pool)
+            .await
+            .expect("foreign item");
+    let server = site(&pool, Some(config(&dir, "127.0.0.1:1")))
+        .await
+        .client();
+    let creds = sign_in(&server, "dana").await;
+
+    let list = get_as(&server, "/admin/quarantine", &creds).await;
+    list.assert_status_ok();
+    let html = list.text();
+    assert!(html.contains("a@example.com"), "own domain is listed");
+    assert!(!html.contains("b@other.org"), "other domains are not");
+
+    get_as(&server, &format!("/admin/quarantine/{own}"), &creds)
+        .await
+        .assert_status_ok();
+    get_as(&server, &format!("/admin/quarantine/{foreign}"), &creds)
+        .await
+        .assert_status(axum::http::StatusCode::NOT_FOUND);
+    for action in ["release", "delete"] {
+        post_as(
+            &server,
+            &format!("/admin/quarantine/{foreign}/{action}"),
+            &creds,
+        )
+        .await
+        .assert_status(axum::http::StatusCode::NOT_FOUND);
+    }
+    let held: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM quarantine_items WHERE id = $1 AND status = 'held'",
+    )
+    .bind(foreign)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(held, 1, "the other domain's message is untouched");
+    post_as(&server, &format!("/admin/quarantine/{own}/delete"), &creds)
+        .await
+        .assert_status_ok();
 }
 
 #[sqlx::test(migrations = "../../migrations")]

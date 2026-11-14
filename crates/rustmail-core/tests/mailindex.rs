@@ -57,7 +57,13 @@ async fn searching_finds_parts_of_addresses_and_words_in_the_snippet(pool: PgPoo
                     "Bob Builder <bob.builder@acme-corp.com>",
                     "numbers attached",
                 ),
-                message("INBOX", 2, "Lunch?", "carol@example.org", "pizza on thursday"),
+                message(
+                    "INBOX",
+                    2,
+                    "Lunch?",
+                    "carol@example.org",
+                    "pizza on thursday",
+                ),
             ],
         )
         .await
@@ -76,7 +82,10 @@ async fn searching_finds_parts_of_addresses_and_words_in_the_snippet(pool: PgPoo
         let page = index.search(mb, query, 10, 0).await.unwrap();
         assert_eq!(page.total, expected, "query {query:?}");
     }
-    assert!(index.search(mb, "@.-", 10, 0).await.is_err(), "nothing searchable");
+    assert!(
+        index.search(mb, "@.-", 10, 0).await.is_err(),
+        "nothing searchable"
+    );
 }
 
 #[sqlx::test(migrations = "../../migrations")]
@@ -99,7 +108,10 @@ async fn reindexing_is_idempotent_and_keeps_an_existing_snippet(pool: PgPool) {
     let mb = mailbox(&pool, domain.id, "alice").await;
     let index = MailIndex::new(pool.clone());
     index
-        .upsert(mb, &[message("INBOX", 1, "Hello", "a@b.c", "the full text")])
+        .upsert(
+            mb,
+            &[message("INBOX", 1, "Hello", "a@b.c", "the full text")],
+        )
         .await
         .unwrap();
     // A header-only refresh (empty snippet) must not erase what was learned before.
@@ -146,11 +158,23 @@ async fn sync_state_is_remembered_and_clearing_a_folder_forgets_everything(pool:
     let state = index.sync_state(mb, "INBOX").await.unwrap().unwrap();
     assert_eq!((state.uid_validity, state.last_uid), (5, 42));
     index.set_sync_state(mb, "INBOX", 5, 50).await.unwrap();
-    assert_eq!(index.sync_state(mb, "INBOX").await.unwrap().unwrap().last_uid, 50);
+    assert_eq!(
+        index
+            .sync_state(mb, "INBOX")
+            .await
+            .unwrap()
+            .unwrap()
+            .last_uid,
+        50
+    );
 
     index.clear_folder(mb, "INBOX").await.unwrap();
     assert!(index.sync_state(mb, "INBOX").await.unwrap().is_none());
-    assert_eq!(index.count(mb).await.unwrap(), 1, "other folders are untouched");
+    assert_eq!(
+        index.count(mb).await.unwrap(),
+        1,
+        "other folders are untouched"
+    );
 }
 
 #[sqlx::test(migrations = "../../migrations")]
