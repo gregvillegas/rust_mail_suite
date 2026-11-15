@@ -13,9 +13,11 @@
 
 pub mod admin;
 pub mod auth;
+pub mod dav;
 pub mod db;
 pub mod domain;
 pub mod error;
+pub mod filters;
 pub mod mailindex;
 pub mod password;
 pub mod pipeline;

@@ -5,6 +5,7 @@ members = [
     "crates/rustmail-web",
     "crates/rustmail-admin",
     "crates/rustmail-imap",
+    "crates/rustmail-sieve",
     "crates/rustmail-cli",
 ]
 
@@ -83,10 +84,24 @@ tokio-rustls = { version = "0.26", default-features = false, features = ["ring",
 webpki-roots = "1"
 futures-util = "0.3"
 
+# Phase 9: calendar and contacts
+# iCalendar and vCard parsing (one crate for both; keeps the raw text, so nothing a client sent is lost).
+ical = "0.11"
+# Expands recurring events (RRULE) for the calendar view and free/busy.
+rrule = "0.14"
+# Resolves time zone names (TZID=Europe/Berlin). Already in the tree through rrule.
+chrono-tz = "0.10"
+# Reads WebDAV request bodies. Responses are written by hand with strict escaping.
+roxmltree = "0.21"
 # Internal crates
 rustmail-core = { path = "crates/rustmail-core" }
 rustmail-imap = { path = "crates/rustmail-imap" }
+rustmail-sieve = { path = "crates/rustmail-sieve" }
 
+# Debug builds keep file and line information (backtraces, panics) but not local variable
+# debug info. Roughly halves the size of `target/`. Use `debug = true` when stepping in a debugger.
+[profile.dev]
+debug = "line-tables-only"
 # Argon2 with its default memory cost is very slow unoptimised; keep dev builds
 # and tests responsive by optimising just the hashing crates.
 [profile.dev.package.argon2]

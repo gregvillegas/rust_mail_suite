@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT installed_at, error FROM sieve_sync_state WHERE user_id = $1 AND script = $2",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "installed_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 1,
+        "name": "error",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "6764c3b4b3374daa56a62bdd80bf9195470d1e6a5c1b9e76ae35c5edc808cc09"
+}

@@ -129,7 +129,7 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 
 ---
 
-## Phase 8 — Filters, Autoresponders, Sieve ☐
+## Phase 8 — Filters, Autoresponders, Sieve ☑
 **Deliverables**
 - Sieve editor in UI (CodeMirror 6)
 - ManageSieve client in Rust
@@ -138,10 +138,11 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 - Server-side rules-engine fallback
 
 **Verification:** user creates filter "from boss@ → Boss folder" → routed correctly.
+**Status:** complete. See `PHASE_8_COMPLETE.md`.
 
 ---
 
-## Phase 9 — Calendar & Contacts (Groupware Parity) ☐
+## Phase 9 — Calendar & Contacts (Groupware Parity) ☑
 **Deliverables**
 - CalDAV/CardDAV endpoints (native Rust or Radicale sidecar — TBD)
 - Web UI: calendar (FullCalendar.js) + contacts
@@ -150,6 +151,7 @@ Legend: ☐ not started · ◐ in progress · ☑ complete
 - Free/busy lookup
 
 **Verification:** create event → sync via CalDAV in Thunderbird → appears.
+**Status:** complete. See `PHASE_9_COMPLETE.md`.
 
 ---
 

@@ -213,8 +213,8 @@ async fn autoresponder_constraints(pool: PgPool) {
     let (user_id, _) = fixture(&pool).await;
 
     sqlx::query(
-        "INSERT INTO autoresponders (user_id, enabled, subject, body, starts_at, ends_at)
-         VALUES ($1, true, 'Away', 'Back soon', now(), now() + interval '7 days')",
+        "INSERT INTO autoresponders (user_id, enabled, subject, body, starts_on, ends_on)
+         VALUES ($1, true, 'Away', 'Back soon', current_date, current_date + 7)",
     )
     .bind(user_id)
     .execute(&pool)
@@ -236,10 +236,10 @@ async fn autoresponder_constraints(pool: PgPool) {
             .unwrap();
     assert!(responder.enabled);
     assert_eq!(responder.reply_interval_days, 7);
-    assert!(responder.ends_at.unwrap() > responder.starts_at.unwrap());
+    assert!(responder.ends_on.unwrap() > responder.starts_on.unwrap());
 
     let reversed = sqlx::query(
-        "UPDATE autoresponders SET starts_at = now(), ends_at = now() - interval '1 day' WHERE user_id = $1",
+        "UPDATE autoresponders SET starts_on = current_date, ends_on = current_date - 1 WHERE user_id = $1",
     )
     .bind(user_id)
     .execute(&pool)

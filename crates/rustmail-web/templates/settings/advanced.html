@@ -1,0 +1,27 @@
+{% extends "settings/layout.html" %}
+{% block title %}{{ ctx.t("filters-advanced") }}{% endblock %}
+{% block settings_content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/settings/filters">{{ ctx.t("settings-filters") }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ ctx.t("filters-advanced") }}</li></ol></nav>
+<h1 class="h3 mb-2">{{ ctx.t("filters-advanced") }}</h1>
+<p class="text-body-secondary">{{ ctx.t("filters-advanced-intro") }}</p>
+{% if raw_mode %}
+<div class="alert alert-info" role="status">{{ ctx.t("filters-raw-active") }}</div>
+{% else %}
+<div class="alert alert-warning" role="status">{{ ctx.t("filters-raw-warning") }}</div>
+{% endif %}
+<p><span class="badge text-bg-{{ status.class }}" data-testid="filters-status">{{ ctx.t(status.key) }}</span> {% if !status.detail.is_empty() %}<span class="small text-body-secondary">{{ status.detail }}</span>{% endif %}</p>
+<form id="script-form" hx-post="/settings/filters/advanced" hx-target="#script-status" hx-swap="innerHTML" hx-boost="false" hx-disabled-elt="#script-save"
+      x-data="sieveEditor" data-editor-src="{{ editor_script }}">
+  <label for="script" class="form-label">{{ ctx.t("filters-script") }}</label>
+  <textarea id="script" name="script" class="form-control font-monospace" rows="18" spellcheck="false" autocapitalize="none" x-ref="source">{{ script }}</textarea>
+  <div class="form-text mb-3">{{ ctx.t("filters-script-help") }}</div>
+  <button id="script-save" type="submit" class="btn btn-primary">{{ ctx.t("filters-script-save") }}</button>
+  <div id="script-status" class="mt-3" aria-live="polite"></div>
+</form>
+{% if raw_mode %}
+<form hx-post="/settings/filters/advanced/leave" hx-target="#leave-status" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("filters-leave-confirm") }}" class="mt-4">
+  <button type="submit" class="btn btn-outline-secondary btn-sm">{{ ctx.t("filters-leave-raw") }}</button>
+  <div id="leave-status" class="mt-3" aria-live="polite"></div>
+</form>
+{% endif %}
+{% endblock %}

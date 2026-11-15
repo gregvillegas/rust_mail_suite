@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT s.id, s.can_write, s.grantee_user_id, u.email AS \"email?\", s.grantee_group_id, g.name AS \"group_name?\"\n               FROM dav_shares s LEFT JOIN users u ON u.id = s.grantee_user_id LEFT JOIN groups g ON g.id = s.grantee_group_id\n               WHERE s.collection_id = $1 ORDER BY lower(COALESCE(u.email, g.name))",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "can_write",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "grantee_user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "email?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "grantee_group_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "group_name?",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "c277db268fcb1673b38c2d8acc22a136070e1ab1289d5f5c00fb8e56886ffc64"
+}

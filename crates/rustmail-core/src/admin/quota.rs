@@ -100,7 +100,7 @@ impl AdminService {
         .collect();
 
         let mailboxes = sqlx::query!(
-            r#"SELECT u.id, u.email, COALESCE(q.bytes_used, 0)::bigint AS "used!",
+            r#"SELECT u.id AS "id!", u.email AS "email!", COALESCE(q.bytes_used, 0)::bigint AS "used!",
                       COALESCE(q.messages_count, 0)::bigint AS "messages!",
                       NULLIF(COALESCE(m.quota_bytes, d.default_quota_bytes, 0), 0) AS quota
                FROM users u

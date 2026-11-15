@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT name, etag, uid, component, summary, revision, data, length(data)::bigint AS \"size!\" FROM dav_objects WHERE collection_id = $1 AND name = ANY($2) ORDER BY name",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "etag",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "uid",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "component",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "revision",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "data",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "size!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "19ed92bc09c5b018939fa9c1f3b638c61021373e68e2455419238e731cdd1e9f"
+}

@@ -22,3 +22,9 @@
 
 # Local dev runtime data (Maildirs, probes)
 /var/
+
+# Build-only dependencies of the vendored editor (the built bundle is committed)
+scripts/vendor-codemirror/node_modules/
+scripts/vendor-fullcalendar/node_modules/
+scripts/dav-smoke/.venv/
+scripts/dav-smoke/__pycache__/

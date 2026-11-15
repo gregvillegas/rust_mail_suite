@@ -6,7 +6,9 @@
   "scripts": {
     "test": "node run.mjs",
     "webmail": "node webmail.mjs",
-    "admin": "node admin.mjs"
+    "admin": "node admin.mjs",
+    "filters": "node filters.mjs",
+    "calendar": "node calendar.mjs"
   },
   "devDependencies": {
     "playwright-core": "1.65.0"

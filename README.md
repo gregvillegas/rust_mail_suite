@@ -57,6 +57,7 @@ Full details in [`ARCHITECTURE.md`](./ARCHITECTURE.md). Directory layout in
 | `rustmail-web`   | bin  | Webmail + public UI + WebSocket (axum + askama)      |
 | `rustmail-admin` | bin  | Admin console (domain/user/quota/audit)              |
 | `rustmail-imap`  | lib  | Async IMAP client used to read messages server-side  |
+| `rustmail-sieve` | lib  | ManageSieve client: installs users' Sieve scripts    |
 | `rustmail-cli`   | bin  | Operator tooling (seed, migrate, provision)          |
 
 ---
@@ -118,6 +119,19 @@ three-pane inbox, reply/forward, attachments, folders, search, spam training and
 For a real host, copy `deploy/mta.env.example` to `/etc/rustmail/mta.env` and run `sudo scripts/setup-mta.sh`.
 With `COOKIE_SECURE=false` in `.env` (the example default) cookies work over plain
 HTTP on localhost; leave it `true` anywhere else.
+
+### Filters and autoresponder (Phase 8)
+Signed-in users open **Filters** and **Autoresponder** from the account menu (`/settings/filters`, `/settings/autoresponder`):
+a rule builder ("from boss@ → move to Boss"), an advanced Sieve editor, and a vacation reply with optional dates.
+Changes are installed on Dovecot over ManageSieve (`SIEVE_HOST` / `SIEVE_PORT`, default: the IMAP host, port 4190).
+`make filters-smoke` drives it all in a real browser against the dev mail stack.
+
+### Calendar and contacts (Phase 9)
+**Calendar** and **Contacts** are in the top menu. To use Thunderbird or a phone, make an app password under
+**App passwords** (`/settings/apps`) and give the app the server address `https://your-host/dav/` and your email address
+as the user name (or the address of one calendar, shown on the same page and under **Calendars and address books**).
+Calendars and address books can be shared read-only or read/write with a colleague or a group in the same domain.
+`make calendar-smoke` drives it all in a real browser with an independent CalDAV client.
 
 ### Auth API (Phase 2)
 

@@ -57,6 +57,7 @@ rust_mail_suite/
 │   │   └── tests/
 │   │
 │   ├── rustmail-imap/           # (lib) async IMAP client wrapper
+│   ├── rustmail-sieve/          # (lib) ManageSieve client (Phase 8)
 │   │   ├── Cargo.toml
 │   │   ├── src/
 │   │   └── tests/

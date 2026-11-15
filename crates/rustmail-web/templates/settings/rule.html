@@ -1,0 +1,84 @@
+{% extends "settings/layout.html" %}
+{% block title %}{% if index.is_some() %}{{ ctx.t("filters-edit-rule") }}{% else %}{{ ctx.t("filters-new-rule") }}{% endif %}{% endblock %}
+{% block settings_content %}
+<nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/settings/filters">{{ ctx.t("settings-filters") }}</a></li><li class="breadcrumb-item active" aria-current="page">{% if index.is_some() %}{{ ctx.t("filters-edit-rule") }}{% else %}{{ ctx.t("filters-new-rule") }}{% endif %}</li></ol></nav>
+<h1 class="h3 mb-3">{% if index.is_some() %}{{ ctx.t("filters-edit-rule") }}{% else %}{{ ctx.t("filters-new-rule") }}{% endif %}</h1>
+<form id="rule-form" hx-post="/settings/filters/rule" hx-target="#form-status" hx-swap="innerHTML" hx-boost="false" hx-disabled-elt="#rule-save" class="rm-w-60">
+  {% if let Some(i) = index %}<input type="hidden" name="index" value="{{ i }}">{% endif %}
+  <div class="mb-3">
+    <label for="r-name" class="form-label">{{ ctx.t("filters-field-name") }}</label>
+    <input id="r-name" name="name" class="form-control" value="{{ name }}" required maxlength="100" autocomplete="off">
+  </div>
+
+  <fieldset class="mb-3">
+    <legend class="h5">{{ ctx.t("filters-when") }}</legend>
+    <div class="mb-2">
+      <label for="r-match" class="visually-hidden">{{ ctx.t("filters-match") }}</label>
+      <select id="r-match" name="match_mode" class="form-select w-auto">
+        <option value="all"{% if match_all %} selected{% endif %}>{{ ctx.t("filters-match-all") }}</option>
+        <option value="any"{% if !match_all %} selected{% endif %}>{{ ctx.t("filters-match-any") }}</option>
+      </select>
+    </div>
+    {% for row in rows %}
+    <div class="row g-2 mb-2">
+      <div class="col-sm-3">
+        <label for="c{{ row.n }}-field" class="visually-hidden">{{ ctx.t_num("filters-condition-field", "n", row.n as i64) }}</label>
+        <select id="c{{ row.n }}-field" name="c{{ row.n }}_field" class="form-select">
+          {% for o in row.fields %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-3">
+        <label for="c{{ row.n }}-op" class="visually-hidden">{{ ctx.t_num("filters-condition-op", "n", row.n as i64) }}</label>
+        <select id="c{{ row.n }}-op" name="c{{ row.n }}_op" class="form-select">
+          {% for o in row.ops %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-6">
+        <label for="c{{ row.n }}-value" class="visually-hidden">{{ ctx.t_num("filters-condition-value", "n", row.n as i64) }}</label>
+        <input id="c{{ row.n }}-value" name="c{{ row.n }}_value" class="form-control" value="{{ row.value }}" maxlength="200" autocomplete="off" autocapitalize="none" spellcheck="false"{% if row.n == 1 %} required{% endif %}>
+      </div>
+    </div>
+    {% endfor %}
+    <div class="form-text">{{ ctx.t("filters-condition-help") }}</div>
+  </fieldset>
+
+  <fieldset class="mb-3">
+    <legend class="h5">{{ ctx.t("filters-then") }}</legend>
+    <div class="row g-2 mb-2">
+      <div class="col-sm-6">
+        <label for="r-folder" class="form-label">{{ ctx.t("filters-move-to") }}</label>
+        <select id="r-folder" name="folder" class="form-select">
+          {% for o in folders %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-6">
+        <label for="r-new-folder" class="form-label">{{ ctx.t("filters-or-new-folder") }}</label>
+        <input id="r-new-folder" name="new_folder" class="form-control" value="{{ new_folder }}" maxlength="200" autocomplete="off" aria-describedby="r-new-folder-help">
+        <div id="r-new-folder-help" class="form-text">{{ ctx.t("filters-new-folder-help") }}</div>
+      </div>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="r-read" name="mark_read" value="on"{% if mark_read %} checked{% endif %}>
+      <label class="form-check-label" for="r-read">{{ ctx.t("filters-do-read") }}</label>
+    </div>
+    <div class="row g-2 my-2">
+      <div class="col-sm-6">
+        <label for="r-forward" class="form-label">{{ ctx.t("filters-do-forward") }}</label>
+        <input id="r-forward" name="forward" type="email" class="form-control" value="{{ forward }}" maxlength="254" autocomplete="off" aria-describedby="r-forward-help">
+        <div id="r-forward-help" class="form-text">{{ ctx.t("filters-forward-help") }}</div>
+      </div>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="r-discard" name="discard" value="on"{% if discard %} checked{% endif %}>
+      <label class="form-check-label" for="r-discard">{{ ctx.t("filters-do-discard") }}</label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input" type="checkbox" id="r-stop" name="stop" value="on"{% if stop %} checked{% endif %}>
+      <label class="form-check-label" for="r-stop">{{ ctx.t("filters-do-stop") }}</label>
+    </div>
+  </fieldset>
+  <button id="rule-save" type="submit" class="btn btn-primary">{{ ctx.t("admin-save") }}</button>
+  <a class="btn btn-link" href="/settings/filters">{{ ctx.t("filters-cancel") }}</a>
+  <div id="form-status" class="mt-3" aria-live="polite"></div>
+</form>
+{% endblock %}

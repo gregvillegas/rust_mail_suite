@@ -1,0 +1,3 @@
+# Independent CalDAV client used by scripts/browser-smoke/calendar.mjs (make calendar-smoke)
+caldav==3.7.0
+vobject

@@ -10,7 +10,7 @@ export
 endif
 
 .DEFAULT_GOAL := help
-.PHONY: admin-smoke help dev dev-down dev-logs migrate seed secret run-web browser-test mta-up mta-down mta-smoke mta-check webmail-smoke mail-index pipeline-ingest pipeline-follow prepare prepare-check test lint fmt build check clean
+.PHONY: admin-smoke filters-smoke calendar-smoke help dev dev-down dev-logs migrate seed secret run-web browser-test mta-up mta-down mta-smoke mta-check webmail-smoke mail-index pipeline-ingest pipeline-follow prepare prepare-check test lint fmt build check clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -71,6 +71,14 @@ webmail-smoke: ## Webmail end-to-end test in a real browser (needs mta-up, Chrom
 admin-smoke: ## Admin console end-to-end test in a real browser (needs mta-up, Chrome, built binaries)
 	cargo build -p rustmail-web -p rustmail-cli
 	cd scripts/browser-smoke && npm install --no-audit --no-fund && npm run admin
+filters-smoke: ## Filters, Sieve and autoresponder end-to-end test in a real browser (needs mta-up, Chrome, built binaries)
+	cargo build -p rustmail-web -p rustmail-cli
+	cd scripts/browser-smoke && npm install --no-audit --no-fund && npm run filters
+calendar-smoke: ## Calendar and contacts end-to-end test: real browser + independent CalDAV client (needs Chrome and scripts/dav-smoke/.venv)
+	cargo build -p rustmail-web -p rustmail-cli
+	cd scripts/browser-smoke && npm install --no-audit --no-fund && npm run calendar
+sieve-live: ## Live ManageSieve test against the dev Dovecot (USER=an existing dev user)
+	LIVE_SIEVE_USER=$(USER) cargo test -p rustmail-sieve --test live -- --ignored
 mail-index: ## Index a user's mailbox for webmail search (USER=alice@example.com)
 	cargo run -q -p rustmail-cli -- mail index $(USER)
 

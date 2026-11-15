@@ -216,7 +216,8 @@ try {
   check('the usage figure appears on the user page', usageShown, await page.locator('[data-testid="user-usage"]').innerText());
   check('a 2 MB message is accepted by Postfix (the quota is Dovecot\'s job)', deliver(tiny.email, message(tiny.email, `toobig-${RUN}`, 2048)));
   const refused = await eventually(() => {
-    const logs = run('docker', ['logs', 'rustmail-mta'], { allowFail: true });
+    // Only the last few minutes: the whole log of a long-lived dev container exceeds spawnSync's buffer.
+    const logs = run('docker', ['logs', '--since', '10m', 'rustmail-mta'], { allowFail: true, maxBuffer: 64 * 1024 * 1024 });
     return new RegExp(`${tiny.email.replace('.', '\\.')}.*(Quota exceeded|552)`, 'i').test(`${logs.stdout}\n${logs.stderr}`);
   }, 90);
   check('Dovecot refused the over-quota message', refused);
@@ -304,6 +305,7 @@ try {
   section('Audit log');
   await page.goto(server.url + '/admin/audit');
   await page.locator('#au-action').selectOption('user.create');
+  await page.locator('#au-text').fill(String(RUN)); // only this run's entries, not leftovers of earlier runs
   await page.getByRole('button', { name: 'Filter' }).click();
   await page.waitForURL(/action=user\.create/);
   const rows = await page.locator('[data-testid="audit-table"] tbody tr').allInnerTexts();

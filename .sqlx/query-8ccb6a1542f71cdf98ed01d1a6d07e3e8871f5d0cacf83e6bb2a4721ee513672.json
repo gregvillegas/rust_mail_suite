@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM dav_tombstones WHERE collection_id = $1 AND name = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8ccb6a1542f71cdf98ed01d1a6d07e3e8871f5d0cacf83e6bb2a4721ee513672"
+}

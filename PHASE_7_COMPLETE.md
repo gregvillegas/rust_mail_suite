@@ -49,7 +49,21 @@ Sign in as each. Give one a 1 MB quota, send it a message larger than 1 MB, and 
 
 ## What was verified
 
-See the results block below (filled in from the final runs).
+Final runs, all on the finished code:
+
+| Check | Result |
+|-------|--------|
+| Gate: fmt, build, clippy `-D warnings`, template render test, `.sqlx` cache check | pass |
+| `cargo test --workspace` | 404 passed, 0 failed |
+| `npm run admin` (new, real browser) | 69 / 69 |
+| `npm test` (earlier phases, scenario E updated) | 97 / 97 |
+| `npm run webmail` | 79 / 79 |
+| `scripts/mta-smoke.sh` | 67 / 67 |
+
+The phase verification ("admin creates a domain and 3 users, all log in, quotas enforced")
+is covered by `npm run admin`: three users created in the UI all sign in and reach IMAP;
+a 1 MB quota set in the UI makes Dovecot refuse a 2 MB message; usage shows on the user
+page and the dashboard.
 
 ## Caveats
 

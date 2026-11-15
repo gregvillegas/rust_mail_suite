@@ -9,14 +9,18 @@ use axum::extract::{DefaultBodyLimit, FromRef, Request, State};
 use axum::http::{header, HeaderName, HeaderValue, StatusCode};
 use axum::middleware::{self, Next};
 use axum::response::Response;
-use axum::routing::get;
+use axum::routing::{any, get};
 use axum::Router;
 use axum_extra::extract::CookieJar;
 use rustmail_core::admin::AdminService;
+use rustmail_core::dav::store::DavStore;
+use rustmail_core::dav::tokens::AppPasswords;
 use rustmail_core::db::PgPool;
 use rustmail_core::domain::User;
+use rustmail_core::filters::store::FilterStore;
 use rustmail_core::provisioning::MailboxProvisioner;
 use rustmail_core::quarantine::QuarantineService;
+use rustmail_sieve::SieveConfig;
 use serde::Deserialize;
 use tower_http::services::ServeDir;
 
@@ -24,6 +28,7 @@ use crate::admin_common::ImportResults;
 use crate::assets::{AssetSource, Assets, STATIC_PREFIX};
 use crate::auth::cookies::ACCESS_COOKIE;
 use crate::auth::{self, rate_limit, AuthState, RateLimitJanitor, RateLimits};
+use crate::dav_server::{self, FailureLimiter};
 use crate::mail::MailService;
 use crate::pages::{self, is_htmx, resolve_locale};
 use crate::ui::{render, ErrorPage, PageCtx, PageError, ToastPartial, UserView};
@@ -54,6 +59,16 @@ pub struct AppState {
     pub admin: Arc<AdminService>,
     /// Bulk-import result files awaiting a one-time download.
     pub import_results: Arc<ImportResults>,
+    /// Saved filters and autoresponder settings.
+    pub filters: Arc<FilterStore>,
+    /// Where ManageSieve is, present when webmail is configured.
+    pub sieve: Option<Arc<SieveConfig>>,
+    /// Calendars, address books, sharing and free/busy.
+    pub dav: Arc<DavStore>,
+    /// App passwords for calendar and contact apps.
+    pub app_passwords: Arc<AppPasswords>,
+    /// Failed CalDAV/CardDAV sign-ins, to slow down guessing.
+    pub dav_failures: Arc<FailureLimiter>,
     static_dir: Arc<PathBuf>,
     csp: Arc<HeaderValue>,
 }
@@ -87,6 +102,11 @@ impl AppState {
             quarantine: None,
             mail: None,
             admin: Arc::new(AdminService::new(pool.clone(), None)),
+            filters: Arc::new(FilterStore::new(pool.clone())),
+            sieve: None,
+            dav: Arc::new(DavStore::new(pool.clone())),
+            app_passwords: Arc::new(AppPasswords::new(pool.clone())),
+            dav_failures: Arc::new(FailureLimiter::default()),
             import_results: Arc::new(ImportResults::default()),
             static_dir: Arc::new(static_dir),
             csp: Arc::new(csp),
@@ -98,6 +118,14 @@ impl AppState {
     /// Enables webmail.
     #[must_use]
     pub fn with_mail(mut self, service: MailService) -> Self {
+        // ManageSieve lives next to IMAP; a bad SIEVE_PORT only disables filter installation.
+        self.sieve = match SieveConfig::from_mail(&service.config) {
+            Ok(config) => Some(Arc::new(config)),
+            Err(error) => {
+                tracing::warn!(%error, "filters will not be installed on the mail server");
+                None
+            }
+        };
         self.mail = Some(Arc::new(service));
         self
     }
@@ -149,8 +177,18 @@ pub fn build_app(state: AppState, limits: RateLimits) -> Result<(Router, RateLim
     )?;
     let csrf_only = api.logout.merge(pages.csrf_posts).layer(csrf());
 
+    // CalDAV and CardDAV. Basic auth with app passwords, no cookies, so no CSRF layer; the body
+    // limit is raised for calendar and contact uploads.
+    let dav = Router::new()
+        .route("/dav", any(dav_server::handle))
+        .route("/dav/", any(dav_server::handle))
+        .route("/dav/{*path}", any(dav_server::handle))
+        .route("/.well-known/caldav", any(dav_server::well_known))
+        .route("/.well-known/carddav", any(dav_server::well_known))
+        .layer(DefaultBodyLimit::max(dav_server::DAV_BODY_LIMIT));
     let dynamic = Router::new()
         .route("/healthz", get(|| async { "ok" }))
+        .merge(dav)
         .merge(login)
         .merge(refresh)
         .merge(csrf_only)

@@ -1,0 +1,83 @@
+{% extends "settings/layout.html" %}
+{% block title %}{{ ctx.t("settings-filters") }}{% endblock %}
+{% block settings_content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+  <h1 class="h3 mb-0">{{ ctx.t("settings-filters") }}</h1>
+  <div class="d-flex gap-2">
+    <a class="btn btn-outline-secondary btn-sm" href="/settings/filters/advanced">{{ ctx.t("filters-advanced") }}</a>
+    {% if can_add && !raw_mode %}<a class="btn btn-primary btn-sm" href="/settings/filters/rule">{{ ctx.t("filters-new-rule") }}</a>{% endif %}
+  </div>
+</div>
+<p class="text-body-secondary">{{ ctx.t("filters-intro") }}</p>
+{% if let Some((class, key)) = notice %}
+<div class="alert alert-{{ class }}" role="status">{% if let Some(n) = count %}{{ ctx.t_num(key, "count", n) }}{% else %}{{ ctx.t(key) }}{% endif %}</div>
+{% endif %}
+<p>
+  <span class="badge text-bg-{{ status.class }}" data-testid="filters-status">{{ ctx.t(status.key) }}</span>
+  {% if !status.detail.is_empty() %}<span class="small text-body-secondary">{{ status.detail }}</span>{% endif %}
+</p>
+{% if status.class == "warning" %}
+<form hx-post="/settings/filters/retry" hx-target="#filters-action-status" hx-swap="innerHTML" hx-boost="false" class="mb-3">
+  <button type="submit" class="btn btn-outline-primary btn-sm">{{ ctx.t("filters-retry") }}</button>
+</form>
+{% endif %}
+{% if raw_mode %}
+<div class="alert alert-info" role="status">
+  {{ ctx.t("filters-raw-active") }}
+  <a href="/settings/filters/advanced">{{ ctx.t("filters-advanced") }}</a>
+</div>
+{% else if rules.is_empty() %}
+<p data-testid="filters-empty">{{ ctx.t("filters-empty") }}</p>
+{% else %}
+<div class="table-responsive">
+  <table class="table align-middle" data-testid="filters-table">
+    <thead>
+      <tr>
+        <th scope="col">{{ ctx.t("filters-col-rule") }}</th>
+        <th scope="col">{{ ctx.t("filters-col-when") }}</th>
+        <th scope="col">{{ ctx.t("filters-col-then") }}</th>
+        <th scope="col"><span class="visually-hidden">{{ ctx.t("admin-col-actions") }}</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rules %}
+      <tr{% if !r.enabled %} class="text-body-secondary"{% endif %}>
+        <th scope="row" class="text-break">{{ r.name }}{% if !r.enabled %} <span class="badge text-bg-secondary">{{ ctx.t("admin-disabled") }}</span>{% endif %}</th>
+        <td class="text-break small">{{ r.when }}</td>
+        <td class="text-break small">{{ r.then }}</td>
+        <td class="text-end text-nowrap">
+          <a class="btn btn-outline-secondary btn-sm" href="/settings/filters/rule?rule={{ r.index }}">{{ ctx.t("filters-edit") }}<span class="visually-hidden"> {{ r.name }}</span></a>
+          <form class="d-inline" hx-post="/settings/filters/{{ r.index }}/toggle" hx-swap="none" hx-boost="false">
+            <input type="hidden" name="enable" value="{% if r.enabled %}0{% else %}1{% endif %}">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">{% if r.enabled %}{{ ctx.t("admin-disable") }}{% else %}{{ ctx.t("admin-enable") }}{% endif %}<span class="visually-hidden"> {{ r.name }}</span></button>
+          </form>
+          {% if !r.first %}
+          <form class="d-inline" hx-post="/settings/filters/{{ r.index }}/move/up" hx-swap="none" hx-boost="false">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" aria-label="{{ ctx.t_str("filters-move-up", "name", r.name) }}">↑</button>
+          </form>
+          {% endif %}
+          {% if !r.last %}
+          <form class="d-inline" hx-post="/settings/filters/{{ r.index }}/move/down" hx-swap="none" hx-boost="false">
+            <button type="submit" class="btn btn-outline-secondary btn-sm" aria-label="{{ ctx.t_str("filters-move-down", "name", r.name) }}">↓</button>
+          </form>
+          {% endif %}
+          <form class="d-inline" hx-post="/settings/filters/{{ r.index }}/delete" hx-swap="none" hx-boost="false" hx-confirm="{{ ctx.t("filters-confirm-delete") }}">
+            <button type="submit" class="btn btn-outline-danger btn-sm">{{ ctx.t("admin-delete") }}<span class="visually-hidden"> {{ r.name }}</span></button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="small text-body-secondary">{{ ctx.t("filters-order-help") }}</p>
+{% endif %}
+{% if can_apply %}
+<h2 class="h5 mt-4">{{ ctx.t("filters-apply-title") }}</h2>
+<p class="small text-body-secondary">{{ ctx.t("filters-apply-help") }}</p>
+<form hx-post="/settings/filters/apply" hx-target="#filters-action-status" hx-swap="innerHTML" hx-boost="false" hx-disabled-elt="#filters-apply-btn" hx-confirm="{{ ctx.t("filters-apply-confirm") }}">
+  <button id="filters-apply-btn" type="submit" class="btn btn-outline-primary btn-sm">{{ ctx.t("filters-apply") }}</button>
+</form>
+{% endif %}
+<div id="filters-action-status" class="mt-3" aria-live="polite"></div>
+{% endblock %}

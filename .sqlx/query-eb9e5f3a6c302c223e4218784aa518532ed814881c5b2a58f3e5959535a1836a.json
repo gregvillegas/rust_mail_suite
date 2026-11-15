@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT name, etag, uid, component, summary, revision, data, length(data)::bigint AS \"size!\" FROM dav_objects\n               WHERE collection_id = $1 AND search_text LIKE $2 ESCAPE '\\'\n               ORDER BY lower(summary), name LIMIT $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "etag",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "uid",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "component",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "summary",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "revision",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "data",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "size!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "eb9e5f3a6c302c223e4218784aa518532ed814881c5b2a58f3e5959535a1836a"
+}

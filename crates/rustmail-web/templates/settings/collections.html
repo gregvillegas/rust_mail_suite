@@ -1,0 +1,109 @@
+{% extends "settings/layout.html" %}
+{% block title %}{{ ctx.t("settings-collections") }}{% endblock %}
+{% block settings_content %}
+<div x-data="swatches">
+<h1 class="h3 mb-2">{{ ctx.t("settings-collections") }}</h1>
+<p class="text-body-secondary">{{ ctx.t("coll-intro") }}</p>
+{% if let Some((class, key)) = notice %}
+<div class="alert alert-{{ class }}" role="status">{{ ctx.t(key) }}</div>
+{% endif %}
+
+<h2 class="h4 mt-4">{{ ctx.t("coll-calendars") }}</h2>
+{% for c in calendars %}
+<div class="card mb-3" data-testid="collection-card">
+  <div class="card-body">
+    <h3 class="h5 card-title text-break"><span class="rm-swatch" data-color="{{ c.color }}" aria-hidden="true"></span> {{ c.name }} <span class="badge text-bg-secondary fs-6">{{ ctx.t(c.access_key) }}</span></h3>
+    {% if !c.is_owner %}<p class="small text-body-secondary">{{ ctx.t_str("coll-owned-by", "owner", c.owner) }}</p>{% endif %}
+    <p class="small mb-2">{{ ctx.t("coll-address") }} <code class="user-select-all text-break">{{ c.url }}</code></p>
+    {% if c.is_owner %}
+    <form hx-post="/settings/collections/{{ c.id }}/update" hx-target="#status-{{ c.id }}" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end mb-3">
+      <div class="col-md-4"><label for="n-{{ c.id }}" class="form-label">{{ ctx.t("admin-col-name") }}</label><input id="n-{{ c.id }}" name="name" class="form-control" value="{{ c.name }}" required maxlength="128" autocomplete="off"></div>
+      <div class="col-md-3"><label for="col-{{ c.id }}" class="form-label">{{ ctx.t("coll-color") }}</label><input id="col-{{ c.id }}" name="color" type="color" class="form-control form-control-color" value="{% if c.color.is_empty() %}#3788d8{% else %}{{ c.color }}{% endif %}"></div>
+      <div class="col-md-4"><label for="d-{{ c.id }}" class="form-label">{{ ctx.t("cal-description") }}</label><input id="d-{{ c.id }}" name="description" class="form-control" value="{{ c.description }}" maxlength="1000" autocomplete="off"></div>
+      <div class="col-auto"><button type="submit" class="btn btn-outline-primary">{{ ctx.t("admin-save") }}</button></div>
+      <div class="col-12" id="status-{{ c.id }}" aria-live="polite"></div>
+    </form>
+    <h4 class="h6">{{ ctx.t("coll-shared-with") }}</h4>
+    {% if c.shares.is_empty() %}<p class="small text-body-secondary">{{ ctx.t("coll-not-shared") }}</p>{% else %}
+    <ul class="list-group mb-3 rm-w-50">
+      {% for s in c.shares %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span class="text-break">{% if s.group %}<span class="badge text-bg-light">{{ ctx.t("coll-group") }}</span> {% endif %}{{ s.who }} <span class="text-body-secondary">· {% if s.write %}{{ ctx.t("dav-access-write") }}{% else %}{{ ctx.t("dav-access-read") }}{% endif %}</span></span>
+        <form hx-post="/settings/collections/{{ c.id }}/unshare/{{ s.id }}" hx-swap="none" hx-boost="false"><button type="submit" class="btn btn-outline-secondary btn-sm">{{ ctx.t("coll-stop-sharing") }}<span class="visually-hidden"> {{ s.who }}</span></button></form>
+      </li>
+      {% endfor %}
+    </ul>{% endif %}
+    <form hx-post="/settings/collections/{{ c.id }}/share" hx-target="#share-{{ c.id }}" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end mb-3">
+      <div class="col-md-4"><label for="su-{{ c.id }}" class="form-label">{{ ctx.t("coll-share-user") }}</label><input id="su-{{ c.id }}" name="with_user" type="email" class="form-control" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+      <div class="col-md-3"><label for="sg-{{ c.id }}" class="form-label">{{ ctx.t("coll-share-group") }}</label>
+        <select id="sg-{{ c.id }}" name="with_group" class="form-select"><option value="">–</option>{% for g in groups %}<option value="{{ g.value }}">{{ g.label }}</option>{% endfor %}</select></div>
+      <div class="col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" id="sw-{{ c.id }}" name="can_write" value="on"><label class="form-check-label" for="sw-{{ c.id }}">{{ ctx.t("coll-may-change") }}</label></div></div>
+      <div class="col-auto"><button type="submit" class="btn btn-outline-primary">{{ ctx.t("coll-share") }}</button></div>
+      <div class="col-12" id="share-{{ c.id }}" aria-live="polite"></div>
+    </form>
+    <form hx-post="/settings/collections/{{ c.id }}/delete" hx-target="#del-{{ c.id }}" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("coll-confirm-delete") }}" class="row g-2 align-items-end">
+      <div class="col-md-5"><label for="x-{{ c.id }}" class="form-label">{{ ctx.t_str("admin-type-to-confirm", "value", c.name) }}</label><input id="x-{{ c.id }}" name="confirm" class="form-control" autocomplete="off"></div>
+      <div class="col-auto"><button type="submit" class="btn btn-outline-danger">{{ ctx.t("admin-delete") }}</button></div>
+      <div class="col-12" id="del-{{ c.id }}" aria-live="polite"></div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+<form hx-post="/settings/collections/create" hx-target="#new-cal-status" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end mb-4 rm-w-50">
+  <input type="hidden" name="kind" value="calendar">
+  <div class="col-md-5"><label for="new-cal" class="form-label">{{ ctx.t("coll-new-calendar") }}</label><input id="new-cal" name="name" class="form-control" required maxlength="128" autocomplete="off"></div>
+  <div class="col-md-3"><label for="new-cal-color" class="form-label">{{ ctx.t("coll-color") }}</label><input id="new-cal-color" name="color" type="color" class="form-control form-control-color" value="#3788d8"></div>
+  <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-create") }}</button></div>
+  <div class="col-12" id="new-cal-status" aria-live="polite"></div>
+</form>
+
+<h2 class="h4 mt-4">{{ ctx.t("coll-books") }}</h2>
+{% for c in books %}
+<div class="card mb-3" data-testid="collection-card">
+  <div class="card-body">
+    <h3 class="h5 card-title text-break">{{ c.name }} <span class="badge text-bg-secondary fs-6">{{ ctx.t(c.access_key) }}</span></h3>
+    {% if !c.is_owner %}<p class="small text-body-secondary">{{ ctx.t_str("coll-owned-by", "owner", c.owner) }}</p>{% endif %}
+    <p class="small mb-2">{{ ctx.t("coll-address") }} <code class="user-select-all text-break">{{ c.url }}</code></p>
+    {% if c.is_owner %}
+    <form hx-post="/settings/collections/{{ c.id }}/update" hx-target="#status-{{ c.id }}" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end mb-3">
+      <div class="col-md-5"><label for="n-{{ c.id }}" class="form-label">{{ ctx.t("admin-col-name") }}</label><input id="n-{{ c.id }}" name="name" class="form-control" value="{{ c.name }}" required maxlength="128" autocomplete="off"></div>
+      <div class="col-md-5"><label for="d-{{ c.id }}" class="form-label">{{ ctx.t("cal-description") }}</label><input id="d-{{ c.id }}" name="description" class="form-control" value="{{ c.description }}" maxlength="1000" autocomplete="off"></div>
+      <div class="col-auto"><button type="submit" class="btn btn-outline-primary">{{ ctx.t("admin-save") }}</button></div>
+      <div class="col-12" id="status-{{ c.id }}" aria-live="polite"></div>
+    </form>
+    <h4 class="h6">{{ ctx.t("coll-shared-with") }}</h4>
+    {% if c.shares.is_empty() %}<p class="small text-body-secondary">{{ ctx.t("coll-not-shared") }}</p>{% else %}
+    <ul class="list-group mb-3 rm-w-50">
+      {% for s in c.shares %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <span class="text-break">{% if s.group %}<span class="badge text-bg-light">{{ ctx.t("coll-group") }}</span> {% endif %}{{ s.who }} <span class="text-body-secondary">· {% if s.write %}{{ ctx.t("dav-access-write") }}{% else %}{{ ctx.t("dav-access-read") }}{% endif %}</span></span>
+        <form hx-post="/settings/collections/{{ c.id }}/unshare/{{ s.id }}" hx-swap="none" hx-boost="false"><button type="submit" class="btn btn-outline-secondary btn-sm">{{ ctx.t("coll-stop-sharing") }}<span class="visually-hidden"> {{ s.who }}</span></button></form>
+      </li>
+      {% endfor %}
+    </ul>{% endif %}
+    <form hx-post="/settings/collections/{{ c.id }}/share" hx-target="#share-{{ c.id }}" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end mb-3">
+      <div class="col-md-4"><label for="su-{{ c.id }}" class="form-label">{{ ctx.t("coll-share-user") }}</label><input id="su-{{ c.id }}" name="with_user" type="email" class="form-control" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+      <div class="col-md-3"><label for="sg-{{ c.id }}" class="form-label">{{ ctx.t("coll-share-group") }}</label>
+        <select id="sg-{{ c.id }}" name="with_group" class="form-select"><option value="">–</option>{% for g in groups %}<option value="{{ g.value }}">{{ g.label }}</option>{% endfor %}</select></div>
+      <div class="col-md-3"><div class="form-check"><input class="form-check-input" type="checkbox" id="sw-{{ c.id }}" name="can_write" value="on"><label class="form-check-label" for="sw-{{ c.id }}">{{ ctx.t("coll-may-change") }}</label></div></div>
+      <div class="col-auto"><button type="submit" class="btn btn-outline-primary">{{ ctx.t("coll-share") }}</button></div>
+      <div class="col-12" id="share-{{ c.id }}" aria-live="polite"></div>
+    </form>
+    <form hx-post="/settings/collections/{{ c.id }}/delete" hx-target="#del-{{ c.id }}" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("coll-confirm-delete") }}" class="row g-2 align-items-end">
+      <div class="col-md-5"><label for="x-{{ c.id }}" class="form-label">{{ ctx.t_str("admin-type-to-confirm", "value", c.name) }}</label><input id="x-{{ c.id }}" name="confirm" class="form-control" autocomplete="off"></div>
+      <div class="col-auto"><button type="submit" class="btn btn-outline-danger">{{ ctx.t("admin-delete") }}</button></div>
+      <div class="col-12" id="del-{{ c.id }}" aria-live="polite"></div>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endfor %}
+<form hx-post="/settings/collections/create" hx-target="#new-book-status" hx-swap="innerHTML" hx-boost="false" class="row g-2 align-items-end mb-4 rm-w-50">
+  <input type="hidden" name="kind" value="addressbook">
+  <div class="col-md-6"><label for="new-book" class="form-label">{{ ctx.t("coll-new-book") }}</label><input id="new-book" name="name" class="form-control" required maxlength="128" autocomplete="off"></div>
+  <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-create") }}</button></div>
+  <div class="col-12" id="new-book-status" aria-live="polite"></div>
+</form>
+</div>
+{% endblock %}

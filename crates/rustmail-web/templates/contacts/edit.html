@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{% if is_new %}{{ ctx.t("contacts-new") }}{% else %}{{ name }}{% endif %}{% endblock %}
+{% block content %}
+<div class="container py-4 rm-w-50">
+  <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/contacts?b={{ book }}">{{ ctx.t("contacts-title") }}</a></li><li class="breadcrumb-item active" aria-current="page">{% if is_new %}{{ ctx.t("contacts-new") }}{% else %}{{ name }}{% endif %}</li></ol></nav>
+  <h1 class="h3 mb-3 text-break">{% if is_new %}{{ ctx.t("contacts-new") }}{% else %}{{ name }}{% endif %}</h1>
+  {% if !editable %}<div class="alert alert-info" role="status">{{ ctx.t("contacts-readonly") }}</div>{% endif %}
+  <form id="contact-form" hx-post="/contacts/save" hx-target="#form-status" hx-swap="innerHTML" hx-boost="false" hx-disabled-elt="#contact-save" class="row g-3">
+    <input type="hidden" name="book" value="{{ book }}">
+    <input type="hidden" name="object" value="{{ object }}">
+    <input type="hidden" name="etag" value="{{ etag }}">
+    <input type="hidden" name="uid" value="{{ uid }}">
+    <div class="col-12">
+      <label for="k-name" class="form-label">{{ ctx.t("admin-col-name") }}</label>
+      <input id="k-name" name="name" class="form-control" value="{{ name }}" required maxlength="200" autocomplete="off"{% if !editable %} disabled{% endif %}>
+    </div>
+    <div class="col-12">
+      <label for="k-org" class="form-label">{{ ctx.t("contacts-organisation") }}</label>
+      <input id="k-org" name="organisation" class="form-control" value="{{ organisation }}" maxlength="200" autocomplete="off"{% if !editable %} disabled{% endif %}>
+    </div>
+    <div class="col-md-6">
+      <label for="k-emails" class="form-label">{{ ctx.t("contacts-emails") }}</label>
+      <textarea id="k-emails" name="emails" class="form-control" rows="3" aria-describedby="k-emails-help"{% if !editable %} disabled{% endif %}>{{ emails }}</textarea>
+      <div id="k-emails-help" class="form-text">{{ ctx.t("contacts-one-per-line") }}</div>
+    </div>
+    <div class="col-md-6">
+      <label for="k-phones" class="form-label">{{ ctx.t("contacts-phones") }}</label>
+      <textarea id="k-phones" name="phones" class="form-control" rows="3" aria-describedby="k-phones-help"{% if !editable %} disabled{% endif %}>{{ phones }}</textarea>
+      <div id="k-phones-help" class="form-text">{{ ctx.t("contacts-one-per-line") }}</div>
+    </div>
+    <div class="col-12">
+      <label for="k-notes" class="form-label">{{ ctx.t("contacts-notes") }}</label>
+      <textarea id="k-notes" name="notes" class="form-control" rows="3" maxlength="4000"{% if !editable %} disabled{% endif %}>{{ notes }}</textarea>
+    </div>
+    {% if editable %}
+    <div class="col-12 d-flex gap-2">
+      <button id="contact-save" type="submit" class="btn btn-primary">{{ ctx.t("admin-save") }}</button>
+      <a class="btn btn-link" href="/contacts?b={{ book }}">{{ ctx.t("filters-cancel") }}</a>
+    </div>
+    {% endif %}
+    <div class="col-12" id="form-status" aria-live="polite"></div>
+  </form>
+  {% if !is_new && editable %}
+  <form class="mt-4" hx-post="/contacts/delete" hx-target="#delete-status" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("contacts-confirm-delete") }}">
+    <input type="hidden" name="book" value="{{ book }}"><input type="hidden" name="object" value="{{ object }}">
+    <button type="submit" class="btn btn-outline-danger btn-sm">{{ ctx.t("admin-delete") }}</button>
+    <div id="delete-status" class="mt-3" aria-live="polite"></div>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

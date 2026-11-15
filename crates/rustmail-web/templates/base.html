@@ -19,6 +19,8 @@
   <script defer src="{{ ctx.assets.url("js/app.js") }}"></script>
   <script defer src="{{ ctx.assets.url("js/mail.js") }}"></script>
   <script defer src="{{ ctx.assets.url("js/admin.js") }}"></script>
+  <script defer src="{{ ctx.assets.url("js/filters.js") }}"></script>
+  <script defer src="{{ ctx.assets.url("js/calendar.js") }}"></script>
   {% let htmx = ctx.assets.htmx() -%}
   <script defer src="{{ htmx.href }}" data-lib="htmx"{% if let Some(hash) = htmx.integrity %} integrity="{{ hash }}" crossorigin="anonymous"{% endif %}{% if let Some(local) = htmx.fallback %} data-fallback="{{ local }}"{% endif %}></script>
   {% let alpine = ctx.assets.alpine() -%}

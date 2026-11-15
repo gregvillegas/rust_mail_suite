@@ -21,6 +21,30 @@ never needs a chart origin) and is loaded on demand by `static/js/admin.js` on t
 SHA-384 of the file (identical on jsDelivr and unpkg):
 `zYPBGXwO4633CABX/5Spf6emCKUJCfoOkhOMYyxMsatqQZPnDblmmOewfjsIVWCM`.
 
+CodeMirror 6 (the Sieve editor on the advanced filters page) is also **local only**, and is not a
+published file: it is *built* from pinned npm packages into one minified script.
+
+| Component | Version | Licence | Local path |
+|-----------|---------|---------|-----------|
+| `@codemirror/{state,view,commands,language,legacy-modes}` and their dependencies | see `scripts/vendor-codemirror/package-lock.json` | MIT | `codemirror/6/sieve-editor.js` (+ `LICENSES.txt`) |
+
+Rebuild with `cd scripts/vendor-codemirror && npm ci && npm run build`. The editor mounts in a
+shadow root so CodeMirror styles itself with constructable stylesheets; its default `<style>`
+element would be blocked by the `style-src 'self'` policy, and the policy is not relaxed for it.
+
+FullCalendar (the calendar view) is **local only** and, like the editor, is *built* from pinned npm
+packages rather than downloaded as one published file.
+
+| Component | Version | Licence | Local path |
+|-----------|---------|---------|-----------|
+| `@fullcalendar/{core,daygrid,timegrid,list,interaction}` (and Preact) | 6.1.22 (see `scripts/vendor-fullcalendar/package-lock.json`) | MIT | `fullcalendar/6/calendar.js`, `calendar.css`, `fcicons.ttf` (+ `LICENSES.txt`) |
+
+Rebuild with `cd scripts/vendor-fullcalendar && npm ci && npm run build`. FullCalendar normally adds its
+CSS at run time with a `<style>` element and embeds its icon font as a `data:` URI; the
+`style-src 'self'` and `font-src 'self'` policies forbid both. The build moves the stylesheets into
+`calendar.css` and the font into `fcicons.ttf` and fails if the library's layout changes. Version 6 is
+used on purpose: version 7 is a different, larger product.
+
 Bootstrap's JavaScript is intentionally **not** included: menus, the collapse and
 the dialog are built with Alpine.
 

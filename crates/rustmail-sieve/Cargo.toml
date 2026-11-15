@@ -1,0 +1,20 @@
+[package]
+name = "rustmail-sieve"
+description = "ManageSieve (RFC 5804) client: installs users' Sieve scripts on Dovecot."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[dependencies]
+rustmail-imap.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tokio-rustls.workspace = true
+base64.workspace = true
+tokio = { workspace = true, features = ["io-util", "net", "time"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["io-util", "net", "time", "rt", "macros"] }

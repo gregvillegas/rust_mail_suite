@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO sieve_sync_state (user_id, script, installed_at, error)\n               VALUES ($1, $2, CASE WHEN $3::text IS NULL THEN now() END, $3)\n               ON CONFLICT (user_id, script) DO UPDATE\n               SET installed_at = CASE WHEN $3::text IS NULL THEN now() END, error = $3, updated_at = now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b84e7f164e3781a1c453775692c72c9a2d643762810ead7dc68fa59e733a1c9e"
+}

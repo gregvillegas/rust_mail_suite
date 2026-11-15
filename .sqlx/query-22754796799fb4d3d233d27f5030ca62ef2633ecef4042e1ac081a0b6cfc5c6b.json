@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT t.id FROM users t JOIN users a ON a.domain_id = t.domain_id\n               WHERE lower(t.email) = lower($1) AND a.id = $2 AND t.status = 'active'",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "22754796799fb4d3d233d27f5030ca62ef2633ecef4042e1ac081a0b6cfc5c6b"
+}

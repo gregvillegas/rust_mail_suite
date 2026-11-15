@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE sieve_scripts SET is_active = false WHERE user_id = $1 AND name = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9eaa53f05e28f79faa62f88cc75740272da0b34c86413aabf9b5d50d4a7b10f0"
+}

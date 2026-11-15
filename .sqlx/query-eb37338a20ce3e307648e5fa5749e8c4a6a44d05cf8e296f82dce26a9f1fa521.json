@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT name, enabled, match_all, conditions, actions, stop_processing\n               FROM mail_filters WHERE user_id = $1 ORDER BY position",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "match_all",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "conditions",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "actions",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 5,
+        "name": "stop_processing",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "eb37338a20ce3e307648e5fa5749e8c4a6a44d05cf8e296f82dce26a9f1fa521"
+}

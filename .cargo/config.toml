@@ -1,0 +1,4 @@
+# Keep `target/` small. Incremental caches grew to 14 GB on a development laptop and made
+# little difference to build times on a workspace this size.
+[build]
+incremental = false

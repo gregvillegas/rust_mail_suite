@@ -16,6 +16,12 @@
         <li class="nav-item">
           <a class="nav-link{% if ctx.nav_active("/mail") %} active{% endif %}" href="/mail"{% if ctx.nav_active("/mail") %} aria-current="page"{% endif %}>{{ ctx.t("nav-mail") }}</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/calendar") %} active{% endif %}" href="/calendar"{% if ctx.nav_active("/calendar") %} aria-current="page"{% endif %}>{{ ctx.t("nav-calendar") }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/contacts") %} active{% endif %}" href="/contacts"{% if ctx.nav_active("/contacts") %} aria-current="page"{% endif %}>{{ ctx.t("nav-contacts") }}</a>
+        </li>
         {% if ctx.is_admin() %}
         <li class="nav-item">
           <a class="nav-link{% if ctx.nav_active("/admin") %} active{% endif %}" href="/admin"{% if ctx.nav_active("/admin") %} aria-current="page"{% endif %}>{{ ctx.t("nav-admin") }}</a>
@@ -59,6 +65,11 @@
           </button>
           <ul class="dropdown-menu dropdown-menu-end" :class="showClass">
             <li><span class="dropdown-item-text text-body-secondary small">{{ ctx.t_str("signed-in-as", "name", user.email) }}</span></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="/settings/filters">{{ ctx.t("settings-filters") }}</a></li>
+            <li><a class="dropdown-item" href="/settings/autoresponder">{{ ctx.t("settings-autoresponder") }}</a></li>
+            <li><a class="dropdown-item" href="/settings/collections">{{ ctx.t("settings-collections") }}</a></li>
+            <li><a class="dropdown-item" href="/settings/apps">{{ ctx.t("settings-apps") }}</a></li>
             <li><hr class="dropdown-divider"></li>
             <li>
               <button type="button" class="dropdown-item" hx-post="/logout" hx-swap="none" hx-boost="false">{{ ctx.t("sign-out") }}</button>

@@ -1,0 +1,12 @@
+<div class="alert alert-success" role="status">
+  <h2 class="h5">{{ ctx.t("apps-created") }}</h2>
+  <p class="mb-1">{{ ctx.t("apps-created-once") }}</p>
+  <p><code class="user-select-all fs-5" data-testid="app-token">{{ token }}</code></p>
+  <dl class="row small mb-2">
+    <dt class="col-sm-4">{{ ctx.t("apps-login") }}</dt><dd class="col-sm-8"><code class="user-select-all">{{ login }}</code></dd>
+    <dt class="col-sm-4">{{ ctx.t("apps-server") }}</dt><dd class="col-sm-8"><code class="user-select-all text-break">{{ server }}</code></dd>
+    <dt class="col-sm-4">{{ ctx.t("apps-calendar-url") }}</dt><dd class="col-sm-8"><code class="user-select-all text-break">{{ calendar_url }}</code></dd>
+    <dt class="col-sm-4">{{ ctx.t("apps-book-url") }}</dt><dd class="col-sm-8"><code class="user-select-all text-break">{{ book_url }}</code></dd>
+  </dl>
+  <a class="btn btn-primary btn-sm" href="/settings/apps">{{ ctx.t("admin-secret-continue") }}</a>
+</div>

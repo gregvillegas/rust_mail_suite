@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO dav_collections (owner_id, kind, slug, display_name)\n               SELECT $1, 'calendar', 'default', 'Calendar'\n               WHERE NOT EXISTS (SELECT 1 FROM dav_collections WHERE owner_id = $1 AND kind = 'calendar')\n               ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "baec119dc3e6840bea9a4afbabfd0ac4447761b13e661012d982aed71363cf79"
+}

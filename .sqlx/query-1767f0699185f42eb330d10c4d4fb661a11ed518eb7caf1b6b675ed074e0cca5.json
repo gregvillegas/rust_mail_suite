@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT o.data FROM dav_objects o JOIN dav_collections c ON c.id = o.collection_id\n               WHERE c.owner_id = $1 AND c.kind = 'calendar' AND o.component = 'VEVENT' AND o.busy\n                 AND o.starts_at < $3 AND (o.last_end IS NULL OR o.last_end >= $2)\n               LIMIT 5000",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "data",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "1767f0699185f42eb330d10c4d4fb661a11ed518eb7caf1b6b675ed074e0cca5"
+}

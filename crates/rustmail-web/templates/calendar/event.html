@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{% if is_new %}{{ ctx.t("cal-new-event") }}{% else %}{{ title }}{% endif %}{% endblock %}
+{% block content %}
+<div class="container py-4 rm-w-60">
+  <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/calendar">{{ ctx.t("cal-title") }}</a></li><li class="breadcrumb-item active" aria-current="page">{% if is_new %}{{ ctx.t("cal-new-event") }}{% else %}{{ ctx.t("cal-event") }}{% endif %}</li></ol></nav>
+  {% if !editable %}
+  <h1 class="h3 text-break">{{ title }}</h1>
+  <div class="alert alert-info" role="status" data-testid="event-readonly">{{ ctx.t("cal-readonly-help") }}</div>
+  <dl class="row">
+    <dt class="col-sm-3">{{ ctx.t("cal-calendar") }}</dt><dd class="col-sm-9">{{ calendar_name }}</dd>
+    {% if !readonly_when.is_empty() %}<dt class="col-sm-3">{{ ctx.t("cal-when") }}</dt><dd class="col-sm-9">{{ readonly_when }}</dd>{% endif %}
+    {% if !location.is_empty() %}<dt class="col-sm-3">{{ ctx.t("cal-location") }}</dt><dd class="col-sm-9 text-break">{{ location }}</dd>{% endif %}
+  </dl>
+  {% if can_delete %}
+  <form hx-post="/calendar/event/delete" hx-target="#form-status" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("cal-confirm-delete") }}">
+    <input type="hidden" name="collection" value="{{ collection }}"><input type="hidden" name="object" value="{{ object }}">
+    <button type="submit" class="btn btn-outline-danger">{{ ctx.t("admin-delete") }}</button>
+    <div id="form-status" class="mt-3" aria-live="polite"></div>
+  </form>
+  {% endif %}
+  {% else %}
+  <h1 class="h3 mb-3">{% if is_new %}{{ ctx.t("cal-new-event") }}{% else %}{{ ctx.t("cal-edit-event") }}{% endif %}</h1>
+  <form id="event-form" x-data="eventForm" hx-post="/calendar/event" hx-target="#form-status" hx-swap="innerHTML" hx-boost="false" hx-disabled-elt="#event-save" data-utc="1" class="row g-3">
+    <input type="hidden" name="object" value="{{ object }}">
+    <input type="hidden" name="etag" value="{{ etag }}">
+    <input type="hidden" name="uid" value="{{ uid }}">
+    <input type="hidden" name="tz" value="">
+    <div class="col-12">
+      <label for="e-title" class="form-label">{{ ctx.t("cal-field-title") }}</label>
+      <input id="e-title" name="title" class="form-control" value="{{ title }}" required maxlength="200" autocomplete="off">
+    </div>
+    <div class="col-md-6">
+      <label for="e-calendar" class="form-label">{{ ctx.t("cal-calendar") }}</label>
+      <select id="e-calendar" name="collection" class="form-select"{% if !is_new %} aria-readonly="true"{% endif %}>
+        {% for o in calendars %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label for="e-location" class="form-label">{{ ctx.t("cal-location") }}</label>
+      <input id="e-location" name="location" class="form-control" value="{{ location }}" maxlength="200" autocomplete="off">
+    </div>
+    <div class="col-12">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="e-allday" name="all_day" value="on"{% if all_day %} checked{% endif %} @change="toggleAllDay">
+        <label class="form-check-label" for="e-allday">{{ ctx.t("cal-all-day") }}</label>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <label for="e-start" class="form-label">{{ ctx.t("cal-start") }}</label>
+      <input id="e-start" name="start" type="{% if all_day %}date{% else %}datetime-local{% endif %}" class="form-control" value="{{ start }}" required>
+    </div>
+    <div class="col-md-6">
+      <label for="e-end" class="form-label">{{ ctx.t("cal-end") }}</label>
+      <input id="e-end" name="end" type="{% if all_day %}date{% else %}datetime-local{% endif %}" class="form-control" value="{{ end }}" required>
+    </div>
+    <div class="col-md-6">
+      <label for="e-repeat" class="form-label">{{ ctx.t("cal-repeat") }}</label>
+      <select id="e-repeat" name="repeat" class="form-select">
+        {% for o in repeat_options %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label for="e-until" class="form-label">{{ ctx.t("cal-repeat-until") }}</label>
+      <input id="e-until" name="repeat_until" type="date" class="form-control" value="{{ repeat_until }}">
+    </div>
+    <div class="col-12">
+      <label for="e-desc" class="form-label">{{ ctx.t("cal-description") }}</label>
+      <textarea id="e-desc" name="description" class="form-control" rows="4" maxlength="4000">{{ description }}</textarea>
+    </div>
+    <div class="col-12 d-flex gap-2">
+      <button id="event-save" type="submit" class="btn btn-primary">{{ ctx.t("admin-save") }}</button>
+      <a class="btn btn-link" href="/calendar">{{ ctx.t("filters-cancel") }}</a>
+    </div>
+    <div class="col-12" id="form-status" aria-live="polite"></div>
+  </form>
+  {% if can_delete %}
+  <form class="mt-4" hx-post="/calendar/event/delete" hx-target="#delete-status" hx-swap="innerHTML" hx-boost="false" hx-confirm="{{ ctx.t("cal-confirm-delete") }}">
+    <input type="hidden" name="collection" value="{{ collection }}"><input type="hidden" name="object" value="{{ object }}">
+    <button type="submit" class="btn btn-outline-danger btn-sm">{{ ctx.t("admin-delete") }}</button>
+    <div id="delete-status" class="mt-3" aria-live="polite"></div>
+  </form>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

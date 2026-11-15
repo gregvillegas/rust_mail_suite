@@ -95,3 +95,14 @@ main:focus { outline: none; }
 .rm-w-60 { max-width: 60rem; }
 .rm-chart { position: relative; height: 18rem; }
 .rm-audit-details { max-width: 28rem; white-space: pre-wrap; word-break: break-all; }
+
+/* The Sieve editor (CodeMirror, in a shadow root) keeps a light surface in both themes: its
+   syntax colours are chosen for a light background. */
+.rm-editor { height: 24rem; overflow: hidden; background: #fff; color: #212529; }
+
+/* Calendar and contacts (Phase 9). Colours of calendars are applied by calendar.js. */
+.rm-swatch { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 50%; background: #3788d8; flex: none; margin-top: 0.3rem; }
+.rm-calendar { min-height: 20rem; }
+.rm-calendar .fc { font-size: 0.9rem; }
+.rm-calendar .fc a { text-decoration: none; }
+.rm-calendar .fc .fc-daygrid-day-number, .rm-calendar .fc .fc-col-header-cell-cushion { color: var(--bs-body-color); }

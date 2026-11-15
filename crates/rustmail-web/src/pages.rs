@@ -44,7 +44,7 @@ use crate::ui::{
     DashboardPage, LoginFormPartial, LoginFormView, LoginPage, PageCtx, PageError, RenewPage,
     UserView,
 };
-use crate::{admin_pages, admin_reports, mail_pages, mail_ws};
+use crate::{admin_pages, admin_reports, dav_pages, filter_pages, mail_pages, mail_ws};
 
 const HX_REDIRECT: HeaderName = HeaderName::from_static("hx-redirect");
 const HX_REFRESH: HeaderName = HeaderName::from_static("hx-refresh");
@@ -84,6 +84,68 @@ pub fn routes() -> PageRoutes {
             .route("/mail/folders/create", post(mail_pages::folder_create))
             .route("/mail/folders/rename", post(mail_pages::folder_rename))
             .route("/mail/folders/delete", post(mail_pages::folder_delete))
+            .route("/calendar/event", post(dav_pages::event_save))
+            .route("/calendar/event/delete", post(dav_pages::event_delete))
+            .route("/contacts/save", post(dav_pages::contact_save))
+            .route("/contacts/delete", post(dav_pages::contact_delete))
+            .route(
+                "/settings/collections/create",
+                post(dav_pages::collection_create),
+            )
+            .route(
+                "/settings/collections/{id}/update",
+                post(dav_pages::collection_update),
+            )
+            .route(
+                "/settings/collections/{id}/delete",
+                post(dav_pages::collection_delete),
+            )
+            .route(
+                "/settings/collections/{id}/share",
+                post(dav_pages::collection_share),
+            )
+            .route(
+                "/settings/collections/{id}/unshare/{share}",
+                post(dav_pages::collection_unshare),
+            )
+            .route("/settings/apps", post(dav_pages::app_create))
+            .route("/settings/apps/{id}/revoke", post(dav_pages::app_revoke))
+            .route("/settings/filters/rule", post(filter_pages::rule_save))
+            .route(
+                "/settings/filters/apply",
+                post(filter_pages::apply_to_inbox),
+            )
+            .route("/settings/filters/retry", post(filter_pages::retry))
+            .route(
+                "/settings/filters/advanced",
+                post(filter_pages::advanced_save).layer(axum::extract::DefaultBodyLimit::max(
+                    filter_pages::SCRIPT_BODY_LIMIT,
+                )),
+            )
+            .route(
+                "/settings/filters/advanced/leave",
+                post(filter_pages::advanced_leave),
+            )
+            .route(
+                "/settings/filters/{i}/toggle",
+                post(filter_pages::rule_toggle),
+            )
+            .route(
+                "/settings/filters/{i}/move/{dir}",
+                post(filter_pages::rule_move),
+            )
+            .route(
+                "/settings/filters/{i}/delete",
+                post(filter_pages::rule_delete),
+            )
+            .route(
+                "/settings/autoresponder",
+                post(filter_pages::autoresponder_save),
+            )
+            .route(
+                "/settings/autoresponder/retry",
+                post(filter_pages::autoresponder_retry),
+            )
             .route("/admin/domains", post(admin_pages::domain_create))
             .route("/admin/domains/{id}", post(admin_pages::domain_update))
             .route(
@@ -156,6 +218,18 @@ pub fn routes() -> PageRoutes {
                 get(mail_pages::attachment),
             )
             .route("/mail/ws", get(mail_ws::socket))
+            .route("/calendar", get(dav_pages::calendar_page))
+            .route("/calendar/events", get(dav_pages::calendar_events))
+            .route("/calendar/event", get(dav_pages::event_page))
+            .route("/calendar/freebusy", get(dav_pages::freebusy))
+            .route("/contacts", get(dav_pages::contacts_page))
+            .route("/contacts/edit", get(dav_pages::contact_page))
+            .route("/settings/collections", get(dav_pages::collections_page))
+            .route("/settings/apps", get(dav_pages::apps_page))
+            .route("/settings/filters", get(filter_pages::filters))
+            .route("/settings/filters/rule", get(filter_pages::rule_page_get))
+            .route("/settings/filters/advanced", get(filter_pages::advanced))
+            .route("/settings/autoresponder", get(filter_pages::autoresponder))
             .route("/admin/domains", get(admin_pages::domains))
             .route("/admin/domains/{id}", get(admin_pages::domain))
             .route("/admin/users", get(admin_pages::users))

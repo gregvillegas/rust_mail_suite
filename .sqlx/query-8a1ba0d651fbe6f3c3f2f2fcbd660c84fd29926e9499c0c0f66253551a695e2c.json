@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT c.id FROM dav_collections c JOIN users o ON o.id = c.owner_id\n               WHERE lower(o.email) = lower($1) AND c.kind = $2 AND c.slug = $3",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "8a1ba0d651fbe6f3c3f2f2fcbd660c84fd29926e9499c0c0f66253551a695e2c"
+}

@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE dav_collections SET revision = revision + 1 WHERE id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3b0b2947cf2b065aa7dbd9d1938e8aff76247d0cf5b9bd72371acd532fbf84b4"
+}

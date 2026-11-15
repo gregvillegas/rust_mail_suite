@@ -225,3 +225,61 @@ Browser ──htmx/Alpine──► rustmail-web ──IMAPS (master login)──
 - **Search** is PostgreSQL full-text over `messages_meta`: headers plus a 240-character snippet, filled in the background as people use the mailbox and by `rustmail-cli mail index`. A search hit is a pointer that may be stale if another client moved the message.
 - **Display safety.** Mail is untrusted. HTML goes through `ammonia` (no scripts, styles, forms, frames, handlers; links get `noopener noreferrer`; remote images only on request), is served as its own document with `Content-Security-Policy: sandbox; default-src 'none'`, and is shown in an `<iframe sandbox>` without `allow-scripts` or `allow-same-origin`. Attachments are always downloads, with a sandbox CSP and a short allow-list of content types.
 - **New mail** is pushed over a WebSocket backed by IMAP IDLE. The upgrade requires the session cookie and a matching `Origin`; sockets are limited per user and in total. The list also polls every minute.
+
+## 13. Filters and autoresponder (Phase 8)
+```
+Browser ──htmx──► rustmail-web ──► PostgreSQL (mail_filters, sieve_scripts, autoresponders)
+                      │
+                      └─ ManageSieve :4190 (STARTTLS, master login) ──► Dovecot ~/sieve/
+                           rustmail            active; includes the two below
+                           rustmail-filters    the rules (generated) or the user's own script
+                           rustmail-vacation   the autoresponder (generated)
+Postfix ──LMTP──► Dovecot ──Pigeonhole runs the active script on delivery──► folders / reply / redirect
+```
+- **The database holds what the user entered; Sieve is generated from it.** Rules (`rustmail_core::filters`) become a script
+  in `filters::sieve`. Every user-supplied string is quoted by one function, and validation rejects control characters, so a rule
+  cannot add Sieve text. Disabled rules are left out.
+- **Three scripts, not one**, so the rule builder, the advanced editor and the autoresponder never overwrite each other. The active
+  script only `include`s the other two (`:optional`, so installing one never fails because the other is not there yet).
+- **Raw scripts are checked by Dovecot** (`CHECKSCRIPT`) before they are saved. A script it rejects is shown to the user, with its
+  line numbers, and never stored. Switching back to the rule builder keeps the hand-written script for later.
+- **ManageSieve client** (`rustmail-sieve`): STARTTLS is mandatory (credentials are only sent inside TLS), login is `<user>*<master>`
+  like webmail, every command has a timeout, and responses are size-bounded.
+- **If Dovecot cannot be reached** the change is still saved, the page says "Not active yet" with the reason and offers "Send again",
+  and "Apply to inbox" runs the same rules once over the 500 newest inbox messages with `filters::engine`. The fallback only moves
+  and marks messages as read; discard and forward are skipped on purpose, because deleting or re-sending old mail on a guess is worse
+  than leaving it. It cannot see `List-Id`, so rules on that field do not match there.
+- **Autoresponder:** Pigeonhole's `vacation` with `:days` (1 to 30), the user's own addresses (login and enabled aliases) in
+  `:addresses`, and optional first and last day compared with `currentdate`. Days follow the mail server's clock and time zone.
+- **Editor:** CodeMirror 6, built from pinned npm packages into one local file and mounted in a shadow root so the strict
+  `style-src 'self'` policy stays as it is. Without JavaScript the page is a plain textarea.
+
+## 14. Calendar and contacts (Phase 9)
+```
+Thunderbird / phone ──HTTPS, Basic + app password──► /dav/… (rustmail-web) ──┐
+Browser ──htmx──► /calendar /contacts /settings/…  (rustmail-web) ───────────┼─► rustmail_core::dav::store ─► PostgreSQL
+                                                                              │   dav_collections · dav_objects
+                                                       rustmail_core::dav::calendar / contact (parse, expand repeats)
+```
+- **Native, not a sidecar.** CalDAV and CardDAV are served by the web server, so there is one login system, one permission
+  model, one database, and the calendar page, sharing and free/busy use the same code the protocol does. The cost is that the
+  protocol is ours to get right; it is tested against an independent client (the Python `caldav` library) and by protocol tests.
+- **The text a client sent is what is stored and returned**, byte for byte. Extracted columns (UID, start, end, last end, busy,
+  search text) exist only for queries. Nothing a phone wrote is reformatted or dropped.
+- **Collections and objects.** A user owns calendars and address books (made on first use). Each change bumps the collection's
+  `revision`; the sync token is that number, and `dav_tombstones` remembers deletions. ETags are a hash of the text.
+  Writes lock the collection row, so changes are numbered one after another.
+- **Access in one place.** The SQL function `dav_access(user, collection)` gives 3 owner, 2 read/write, 1 read, 0 none (a group
+  share counts for each member; the highest wins). The store checks it on every call, and a collection without access is "not
+  found", so its existence is not revealed. Sharing stays inside one domain.
+- **Repeating events** are expanded with the `rrule` crate, with exceptions (`EXDATE`) and moved instances (`RECURRENCE-ID`) handled
+  here. The time extent of a repeating event is stored so the database can skip events outside a window.
+- **The page only edits what it can write back.** An event is editable in the page only if it has nothing but the properties the
+  form covers and a repeat rule the form can express; otherwise it is shown, and can be deleted, but a forged save is refused.
+  Contacts are edited by replacing only the lines the page owns, so photos and custom fields survive.
+- **Sign-in for apps** is HTTP Basic with an app password (128 random bits, only a SHA-256 stored, revocable, audited). Failed
+  attempts are limited per client address and per user. No cookies are involved, so CSRF does not apply to `/dav`.
+- **Free/busy** gives times only, for people in the asker's own domain, from the person's own calendars, ignoring events marked
+  free or cancelled.
+- **Front end:** FullCalendar 6, built from pinned packages into a local file; its stylesheet and icon font are extracted so the
+  strict CSP stays unchanged.

@@ -36,10 +36,10 @@ pub struct Autoresponder {
     pub subject: String,
     /// Reply body.
     pub body: String,
-    /// Responder is active from this time, if set.
-    pub starts_at: Option<DateTime<Utc>>,
-    /// Responder is active until this time, if set.
-    pub ends_at: Option<DateTime<Utc>>,
+    /// First day replies are sent (inclusive), if set. A calendar day, because Sieve compares days.
+    pub starts_on: Option<chrono::NaiveDate>,
+    /// Last day replies are sent (inclusive), if set.
+    pub ends_on: Option<chrono::NaiveDate>,
     /// Minimum days between replies to the same sender.
     pub reply_interval_days: i32,
     /// Creation time.

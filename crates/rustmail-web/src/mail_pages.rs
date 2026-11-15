@@ -1056,7 +1056,7 @@ fn empty_preview(ctx: PageCtx) -> Response {
     render(&PreviewPartial { ctx, preview: None })
 }
 
-async fn with_session<T>(
+pub(crate) async fn with_session<T>(
     state: &AppState,
     email: &str,
     action: impl AsyncFnOnce(&mut MailSession) -> Result<T, MailError>,

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO dav_tombstones (collection_id, name, revision) VALUES ($1, $2, $3)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f7ba621a1b8e63c548eb079d2fd1fbd033a2059a5b8126eaebe0ca3e5c749ce3"
+}

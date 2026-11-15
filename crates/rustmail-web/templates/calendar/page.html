@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.t("cal-title") }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">{{ ctx.t("cal-title") }}</h1>
+    <div class="d-flex flex-wrap gap-2">
+      {% if can_create %}<a class="btn btn-primary btn-sm" href="/calendar/event">{{ ctx.t("cal-new-event") }}</a>{% endif %}
+      <a class="btn btn-outline-secondary btn-sm" href="/calendar/freebusy">{{ ctx.t("cal-freebusy") }}</a>
+      <a class="btn btn-outline-secondary btn-sm" href="/settings/collections">{{ ctx.t("cal-manage") }}</a>
+    </div>
+  </div>
+  <div class="row g-3">
+    <div class="col-lg-3 col-xl-2">
+      <h2 class="h6 text-body-secondary">{{ ctx.t("cal-your-calendars") }}</h2>
+      <ul class="list-unstyled small" data-testid="calendar-list">
+        {% for c in calendars %}
+        <li class="d-flex align-items-start gap-2 mb-1">
+          <span class="rm-swatch" data-color="{{ c.color }}" aria-hidden="true"></span>
+          <span class="text-break">{{ c.name }}{% if c.shared %} <span class="text-body-secondary">({{ c.owner }}{% if !c.writable %}, {{ ctx.t("dav-access-read") }}{% endif %})</span>{% endif %}</span>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="col-lg-9 col-xl-10">
+      <div x-data="calendarView" id="calendar-root"
+           data-script="{{ script }}" data-css="{{ stylesheet }}" data-lang="{{ ctx.lang() }}"
+           data-events-url="/calendar/events" data-new-url="/calendar/event" data-initial-date="{{ initial_date }}"
+           data-label-today="{{ ctx.t("cal-today") }}" data-label-month="{{ ctx.t("cal-month") }}" data-label-week="{{ ctx.t("cal-week") }}"
+           data-label-day="{{ ctx.t("cal-day") }}" data-label-list="{{ ctx.t("cal-list") }}">
+        <div class="alert alert-warning" role="alert" x-show="failed" x-cloak>{{ ctx.t("cal-failed") }}</div>
+        <div x-ref="mount" class="rm-calendar" data-testid="calendar"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

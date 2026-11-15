@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <nav class="col-md-3 col-lg-2 py-3 rm-sidebar" aria-label="{{ ctx.t("settings-nav") }}">
+      <ul class="nav nav-pills flex-column">
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/settings/filters") %} active{% endif %}" href="/settings/filters"{% if ctx.nav_active("/settings/filters") %} aria-current="page"{% endif %}>{{ ctx.t("settings-filters") }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/settings/autoresponder") %} active{% endif %}" href="/settings/autoresponder"{% if ctx.nav_active("/settings/autoresponder") %} aria-current="page"{% endif %}>{{ ctx.t("settings-autoresponder") }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/settings/collections") %} active{% endif %}" href="/settings/collections"{% if ctx.nav_active("/settings/collections") %} aria-current="page"{% endif %}>{{ ctx.t("settings-collections") }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link{% if ctx.nav_active("/settings/apps") %} active{% endif %}" href="/settings/apps"{% if ctx.nav_active("/settings/apps") %} aria-current="page"{% endif %}>{{ ctx.t("settings-apps") }}</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/mail">{{ ctx.t("settings-back-to-mail") }}</a>
+        </li>
+      </ul>
+    </nav>
+    <div class="col-md-9 col-lg-10 py-4 px-md-4">
+      {% block settings_content %}{% endblock %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -98,8 +98,20 @@ plugin {
   quota = dict:User quota::proxy::quota
   quota_grace = 10%%
 
-  # Sieve scripts live in the user's home. ManageSieve edits them (Phase 8).
+  # Sieve scripts live in the user's home. RustMail's web UI installs them over
+  # ManageSieve (Phase 8): "rustmail" (active; includes the other two),
+  # "rustmail-filters" (the rules or the user's own script) and "rustmail-vacation".
   sieve = file:~/sieve;active=~/.dovecot.sieve
+  # Limits for what users may store. The web UI caps scripts at 64 KB itself.
+  sieve_max_script_size = 64K
+  sieve_quota_max_scripts = 10
+  sieve_quota_max_storage = 512K
+  # Forwarding rules may add at most this many redirects per message.
+  sieve_max_redirects = 4
+  # The autoresponder asks for 1 to 30 days between replies to the same sender.
+  sieve_vacation_min_period = 1d
+  sieve_vacation_default_period = 7d
+  sieve_vacation_max_period = 30d
   # Runs before the user's own script on every delivery: spam goes to Junk.
   sieve_before = /etc/dovecot/sieve/10-spam-to-junk.sieve
   # Learning: moving a message into Junk trains the spam filter on it, moving it

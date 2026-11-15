@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.t("contacts-title") }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">{{ ctx.t("contacts-title") }}</h1>
+    <div class="d-flex gap-2">
+      {% if writable %}<a class="btn btn-primary btn-sm" href="/contacts/edit?b={{ book }}">{{ ctx.t("contacts-new") }}</a>{% endif %}
+      <a class="btn btn-outline-secondary btn-sm" href="/settings/collections">{{ ctx.t("cal-manage") }}</a>
+    </div>
+  </div>
+  <p class="text-body-secondary" data-testid="book-name">{{ book_name }}</p>
+  {% if let Some((class, key)) = notice %}
+  <div class="alert alert-{{ class }}" role="status">{{ ctx.t(key) }}</div>
+  {% endif %}
+  <form method="get" action="/contacts" class="row g-2 align-items-end mb-3">
+    {% if books.len() > 1 %}
+    <div class="col-sm-4 col-md-3">
+      <label for="c-book" class="form-label">{{ ctx.t("contacts-book") }}</label>
+      <select id="c-book" name="b" class="form-select">
+        {% for o in books %}<option value="{{ o.value }}"{% if o.selected %} selected{% endif %}>{{ o.label }}</option>{% endfor %}
+      </select>
+    </div>
+    {% else %}
+    <input type="hidden" name="b" value="{{ book }}">
+    {% endif %}
+    <div class="col-sm-6 col-md-5">
+      <label for="c-search" class="form-label">{{ ctx.t("admin-filter-search") }}</label>
+      <input id="c-search" name="q" type="search" class="form-control" value="{{ query }}" maxlength="100" autocomplete="off">
+    </div>
+    <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("admin-filter-apply") }}</button></div>
+  </form>
+  {% if !writable %}<p class="small text-body-secondary">{{ ctx.t("contacts-readonly") }}</p>{% endif %}
+  {% if rows.is_empty() %}
+  <p data-testid="contacts-empty">{{ ctx.t("contacts-empty") }}</p>
+  {% else %}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle" data-testid="contacts-table">
+      <thead><tr>
+        <th scope="col">{{ ctx.t("admin-col-name") }}</th>
+        <th scope="col">{{ ctx.t("admin-col-email") }}</th>
+        <th scope="col">{{ ctx.t("contacts-phone") }}</th>
+        <th scope="col">{{ ctx.t("contacts-organisation") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <th scope="row" class="text-break"><a href="/contacts/edit?b={{ book }}&o={{ r.object }}">{{ r.name }}</a></th>
+          <td class="text-break">{{ r.emails }}</td>
+          <td class="text-break">{{ r.phones }}</td>
+          <td class="text-break">{{ r.organisation }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ ctx.t("cal-freebusy") }}{% endblock %}
+{% block content %}
+<div class="container py-4 rm-w-60">
+  <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="/calendar">{{ ctx.t("cal-title") }}</a></li><li class="breadcrumb-item active" aria-current="page">{{ ctx.t("cal-freebusy") }}</li></ol></nav>
+  <h1 class="h3 mb-2">{{ ctx.t("cal-freebusy") }}</h1>
+  <p class="text-body-secondary">{{ ctx.t("cal-freebusy-intro") }}</p>
+  <form method="get" action="/calendar/freebusy" class="row g-2 align-items-end mb-4">
+    <div class="col-md-6">
+      <label for="fb-user" class="form-label">{{ ctx.t("cal-freebusy-person") }}</label>
+      <input id="fb-user" name="user" type="email" class="form-control" value="{{ person }}" required autocomplete="off" autocapitalize="none" spellcheck="false">
+    </div>
+    <div class="col-md-3">
+      <label for="fb-date" class="form-label">{{ ctx.t("cal-freebusy-from") }}</label>
+      <input id="fb-date" name="date" type="date" class="form-control" value="{{ date }}">
+    </div>
+    <div class="col-auto"><button type="submit" class="btn btn-primary">{{ ctx.t("cal-freebusy-show") }}</button></div>
+  </form>
+  {% if let Some(key) = problem %}
+  <div class="alert alert-warning" role="alert">{{ ctx.t(key) }}</div>
+  {% else if searched %}
+  <p class="small text-body-secondary">{{ ctx.t("cal-freebusy-utc") }}</p>
+  <table class="table table-sm" data-testid="freebusy-table">
+    <thead><tr><th scope="col">{{ ctx.t("cal-when") }}</th><th scope="col">{{ ctx.t("cal-busy") }}</th></tr></thead>
+    <tbody>
+      {% for d in days %}
+      <tr><th scope="row" class="text-nowrap">{{ d.day }}</th><td>{% if d.periods.is_empty() %}<span class="text-body-secondary">{{ ctx.t("cal-free") }}</span>{% else %}{% for p in d.periods %}<span class="badge text-bg-secondary me-1">{{ p }}</span>{% endfor %}{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+</div>
+{% endblock %}

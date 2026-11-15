@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO dav_shares (collection_id, grantee_user_id, can_write) VALUES ($1, $2, $3) ON CONFLICT (collection_id, grantee_user_id) WHERE grantee_user_id IS NOT NULL DO UPDATE SET can_write = $3",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "71b5c6c1ed079f58e5be6d8b00c0b5f5c319dc26134fd8504d7735bcf6751ca4"
+}
